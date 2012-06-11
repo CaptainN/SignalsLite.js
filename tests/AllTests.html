@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SignalsLite Tests</title>
+<script src="qunit/qunit.js"></script>
+<script src="../src/SignalLite.js"></script>
+<link href="qunit/qunit.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<h1 id="qunit-header">SignalsLite Tests</h1>
+<h2 id="qunit-banner"></h2>
+<h2 id="qunit-userAgent"></h2>
+<ol id="qunit-tests"></ol>
+<script>
+(function() { "use strict";
+
+var tested = new SignalLite();
+
+module("SignalsLite");
+
+test("Basic Requirements", function() { // I copied jQuery heh
+	expect(1);
+	ok( Function.prototype.apply, "Function.apply()" );
+});
+
+var signaled = new SignalLite();
+
+test("signaled after setup", function() {
+	
+	expect( 2 );
+	equal(
+		signaled.first, signaled.last,
+		"after init, SignalLite.first and SignalLite.last should be equal."
+	);
+	// I have no idea why this failes
+	strictEqual(
+		signaled.first, signaled.last,
+		"after init, SignalLite.first and SignalLite.last should be strictly equal."
+	);
+	
+});
+
+test("has() - added listener is there", function()
+{
+	expect( 3 );
+	
+	var listener = function() {};
+	
+	ok( !signaled.has(listener), "signaled doesn't has listener" );
+	
+	signaled.add( listener );
+	
+	ok( signaled.has(listener), "signaled has listener" );
+	
+	signaled.remove(listener);
+	ok( !signaled.has(listener), "signaled doesn't have listener" );
+});
+
+})();
+</script>
+</body>
+</html>
