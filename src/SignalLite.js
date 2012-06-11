@@ -20,13 +20,13 @@ window.SignalLite = function SignalLite()
 	 * The empty first slot in a linked set.
 	 * @private
 	 */
-	this.last = this.first = new SlotLite;
+	this.first = new SlotLite;
 	
 	/**
 	 * The last Slot is initially a reference to the same slot as the first.
 	 * @private
 	 */
-	//this.last = this.first;
+	this.last = this.first;
 };
 
 SignalLite.prototype = {
