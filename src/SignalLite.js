@@ -37,7 +37,6 @@ SignalLite.prototype = {
 	add: function addListener( listener )
 	{
 		if ( this.has( listener ) ) return;
-		
 		this.last.next = new SlotLite;
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
@@ -54,14 +53,13 @@ SignalLite.prototype = {
 		if ( this.first === this.last ) return false;
 		
 		var node = this.first;
-		while ( node.next )
-		{
-			node = node.next;
-			if ( !node.next ) break;
+		do {
 			if ( node.next.listener === listener ) {
 				return true;
 			}
 		}
+		while( node = node.next && node.next );
+		
 		return false;
 	},
 	
@@ -70,7 +68,7 @@ SignalLite.prototype = {
 	 */
 	getLength: function getLength()
 	{
-		var count;
+		var count = 0;
 		
 		var node = this.first;
 		while ( node = node.next ) {
@@ -86,11 +84,14 @@ SignalLite.prototype = {
 	 */
 	once: function addOnce( listener )
 	{
-		this.add( function oneTime() {
-			remove( oneTime );
+		var that = this;
+		function oneTime() {
+			that.remove( oneTime );
 			listener.apply( null, arguments );
-			listener = null;
-		} );
+			listener = undefined;
+			that = undefined;
+		}
+		this.add( oneTime );
 	},
 	
 	/**
@@ -111,7 +112,7 @@ SignalLite.prototype = {
 				node.prev.next = node.next;
 				if ( node.next )
 					node.next.prev = node.prev;
-				if ( last === node )
+				if ( this.last === node )
 					this.last = node.prev;
 				break;
 			}
