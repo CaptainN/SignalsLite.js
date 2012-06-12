@@ -20,44 +20,116 @@ var tested = new SignalLite();
 
 module("SignalsLite");
 
-test("Basic Requirements", function() { // I copied jQuery heh
+test( "Basic Requirements", function() {
 	expect(1);
 	ok( Function.prototype.apply, "Function.apply()" );
 });
 
-var signaled = new SignalLite();
-
-test("signaled after setup", function() {
+test( "after setup, with 0 listeners", function()
+{
+	expect(2);
+	var signaled = new SignalLite();
 	
-	expect( 2 );
 	equal(
 		signaled.first, signaled.last,
 		"after init, SignalLite.first and SignalLite.last should be equal."
 	);
-	// I have no idea why this failes
+	
 	strictEqual(
 		signaled.first, signaled.last,
 		"after init, SignalLite.first and SignalLite.last should be strictly equal."
 	);
-	
 });
 
-test("has() - added listener is there", function()
+test("add and remove listener", function()
 {
-	expect( 3 );
-	
+	var signaled = new SignalLite();
 	var listener = function() {};
 	
-	ok( !signaled.has(listener), "signaled doesn't has listener" );
+	ok( !signaled.has(listener),
+		"signaled shouldn't has listener" );
+	strictEqual( signaled.getLength(), 0,
+		"signaled should has 0 listeners" );
+	
+	signaled.add( listener );
+	strictEqual( signaled.getLength(), 1,
+		"signaled should has 1 listener" );
+	ok( signaled.has(listener),
+		"signaled should has listener" );
+	
+	signaled.add( listener );
+	ok( signaled.getLength(), 1,
+		"signaled should still have only 1 listener, \
+		after adding the same listener again");
+	
+	signaled.remove(listener);
+	ok( !signaled.has(listener),
+		"signaled shouldn't have listener" );
+	strictEqual( signaled.getLength(), 0,
+		"signaled should have 0 listeners");
+	
+	signaled.remove(listener);
+});
+
+test("normal dispatching", function()
+{
+	var signaled = new SignalLite();
+	
+	var dispatchedCount = 0;
+	var listener = function() {
+		dispatchedCount++;
+	};
 	
 	signaled.add( listener );
 	
-	ok( signaled.has(listener), "signaled has listener" );
+	equal( dispatchedCount, 0, "dispatchedCount should be 0 before dispatch" );
 	
-	signaled.remove(listener);
-	ok( !signaled.has(listener), "signaled doesn't have listener" );
+	signaled.dispatch();
+	equal( dispatchedCount, 1, "dispatchedCount should be 1 after one dispatch" );
+	
+	signaled.dispatch();
+	equal( dispatchedCount, 2, "dispatchedCount should be 2 after two dispatches" );
+	
+	signaled.remove( listener );
+});
+test("once dispatching", function()
+{
+	var signaled = new SignalLite();
+	
+	var dispatchedCount = 0;
+	signaled.once( function() {
+		dispatchedCount++;
+	} );
+	
+	strictEqual( dispatchedCount, 0, "dispatchedCount should be 0 before once dispatch" );
+	strictEqual( signaled.getLength(), 1, "signaled should has 1 listener" );
+	strictEqual( dispatchedCount, 0, "dispatchedCount should be 0 before dispatch" );
+	
+	signaled.dispatch();
+	strictEqual( dispatchedCount, 1, "dispatchedCount should be 1 after one dispatch" );
+	strictEqual( signaled.getLength(), 0, "signaled should has 0 listeners" );
+	
+	signaled.dispatch();
+	strictEqual( dispatchedCount, 1, "dispatchedCount should be 1 after two dispatches" );
 });
 
+test("dispatching with arguments", function() {
+	
+	var signaled = new SignalLite();
+	
+	function listener( string, number, array ) {
+		strictEqual( string, "", "argument should be a string");
+		strictEqual( number, 0, "argument should be a number");
+	}
+	
+	signaled.add( listener );
+	signaled.dispatch( "", 0 );
+	
+} );
+test("dispatching with thisArg", function() {
+	expect(0); // :TODO:
+} );
+	
 })();
 </script>
 </body>
