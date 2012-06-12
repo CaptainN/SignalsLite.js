@@ -21,8 +21,20 @@ var tested = new SignalLite();
 module("SignalsLite");
 
 test( "Basic Requirements", function() {
-	expect(1);
+	expect(4);
 	ok( Function.prototype.apply, "Function.apply()" );
+	ok( (function named() {
+			ok( named, "Named inline function" );
+			return true;
+		})(),
+		"Named inline function 2"
+	);
+	var T;
+	(function() {
+		T=function T(){}
+		T.prototype.test = 1;
+	})();
+	ok((new T).test, "Exported T should have prototype methods");
 });
 
 test( "after setup, with 0 listeners", function()
@@ -41,10 +53,20 @@ test( "after setup, with 0 listeners", function()
 	);
 });
 
-test("add and remove listener", function()
+test("IE7/IE8 - object incorrectness", function()
 {
 	var signaled = new SignalLite();
 	var listener = function() {};
+	
+	ok( signaled, "signaled exists" );
+	ok( signaled.has, "signaled.has exists");
+});
+
+test("add, remove, has listener", function()
+{
+	var signaled = new SignalLite();
+	var listener = function() {};
+	var listener2 = function() {};
 	
 	ok( !signaled.has(listener),
 		"signaled shouldn't has listener" );
@@ -58,9 +80,17 @@ test("add and remove listener", function()
 		"signaled should has listener" );
 	
 	signaled.add( listener );
-	ok( signaled.getLength(), 1,
-		"signaled should still have only 1 listener, \
-		after adding the same listener again");
+	strictEqual( signaled.getLength(), 1,
+		"signaled should have 1 listener after adding a previously added listener again");
+	
+	signaled.add( listener2 );
+	ok( signaled.has( listener2 ),
+		"signaled should has listener2" );
+	strictEqual( signaled.getLength(), 2,
+		"signaled should have 2 listeners after adding a second listener");
+	signaled.remove(listener2);
+	strictEqual( signaled.getLength(), 1,
+		"signaled should have 1 listener after removing second listener");
 	
 	signaled.remove(listener);
 	ok( !signaled.has(listener),
@@ -120,14 +150,37 @@ test("dispatching with arguments", function() {
 	function listener( string, number, array ) {
 		strictEqual( string, "", "argument should be a string");
 		strictEqual( number, 0, "argument should be a number");
+		deepEqual( array, [0,1,"3"], "argument should be an array[0,1,\"3\"]");
 	}
 	
 	signaled.add( listener );
-	signaled.dispatch( "", 0 );
+	signaled.dispatch( "", 0, [0,1,"3"] );
 	
 } );
 test("dispatching with thisArg", function() {
-	expect(0); // :TODO:
+	
+	var target = {};
+	var target2 = {};
+	var signaled = new SignalLite( target );
+	
+	signaled.add( function listener() {
+		equal( target, this, "this should equal target" );
+		signaled.remove( listener );
+	} );
+	signaled.dispatch();
+	
+	signaled.add( function listener() {
+		notEqual( target, this, "this should not equal target");
+		equal( target2, this, "this should equal target2");
+		signaled.remove( listener );
+	}, target2 );
+	signaled.dispatch();
+	
+	signaled.once( function listener() {
+		notEqual( target, this, "this should not equal target");
+		equal( target2, this, "this should equal target2");
+	}, target2 );
+	signaled.dispatch();
 } );
 	
 })();

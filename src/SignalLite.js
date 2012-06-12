@@ -4,17 +4,19 @@
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
  * @author Kevin Newman
  */
-function SlotLite() {
+function SlotLite( listener, target ) {
 	this.next = null; // SlotLite
 	this.prev = null; // SlotLite
-	this.listener = null; // Function
+	this.listener = listener; // Function
+	this.target = target;
 }
 
 /**
  * A lite version of Robert Penner's AS3 Signals, for JavaScript.
+ * @param target The value of this in listeners when dispatching.
  * @author Kevin Newman
  */
-window.SignalLite = function SignalLite()
+function SignalLite( target )
 {
 	/**
 	 * The empty first slot in a linked set.
@@ -27,38 +29,43 @@ window.SignalLite = function SignalLite()
 	 * @private
 	 */
 	this.last = this.first;
+	
+	/**
+	 * The value of this in listeners when dispatching.
+	 */
+	this.target = target;
 };
 
 SignalLite.prototype = {
 	/**
 	 * Add a listener for this Signal.
-	 * @param listener Function The function to be called when the signal fires.
+	 * @param listener The function to be called when the signal fires.
+	 * @param target The value of this in listeners when dispatching only this listener.
 	 */
-	add: function addListener( listener )
+	add: function add( listener, target )
 	{
 		if ( this.has( listener ) ) return;
-		this.last.next = new SlotLite;
+		this.last.next = new SlotLite( listener, target );
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
-		this.last.listener = listener;
 	},
 	
 	/**
 	 * Checks if the Signal contains a specific listener.
-	 * @param	listener The listener to check for.
+	 * @param listener The listener to check for.
 	 * @return Whether or not the listener is in the queue for this signal.
 	 */
-	has: function hasListener( listener )
+	has: function has( listener )
 	{
 		if ( this.first === this.last ) return false;
 		
 		var node = this.first;
 		do {
-			if ( node.next.listener === listener ) {
+			if ( node.next && node.next.listener === listener ) {
 				return true;
 			}
 		}
-		while( node = node.next && node.next );
+		while( node = node.next );
 		
 		return false;
 	},
@@ -80,18 +87,19 @@ SignalLite.prototype = {
 	
 	/**
 	 * My mother told a listener once. Once.
-	 * @param	listener
+	 * @param listener The function to be called when the signal fires.
+	 * @param target The value of this in listeners when dispatching only this listener.
 	 */
-	once: function addOnce( listener )
+	once: function once( listener, target )
 	{
 		var that = this;
 		function oneTime() {
 			that.remove( oneTime );
-			listener.apply( null, arguments );
+			listener.apply( this, arguments );
 			listener = undefined;
 			that = undefined;
 		}
-		this.add( oneTime );
+		this.add( oneTime, target );
 	},
 	
 	/**
@@ -130,9 +138,12 @@ SignalLite.prototype = {
 	{
 		var node = this.first;
 		while ( node = node.next ) {
-			node.listener.apply( null, arguments );
+			node.listener.apply( node.target || this.target, arguments );
 		}
 	}
 };
+
+// This has to be assigned here, rather than inline because of bugs in IE7/IE8
+window.SignalLite = SignalLite;
 
 })();
