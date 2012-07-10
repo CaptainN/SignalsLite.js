@@ -4,7 +4,7 @@ var SIGNAL_EVENT = "signalLiteEvent";
 
 var ua = navigator.userAgent;
 var isFirefox = ua.indexOf( "compatible" ) < 0 &&
-	/Mozilla/.test( ua );
+	/Mozilla(.*)rv:(.*)Gecko/.test( ua );
 
 /**
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
@@ -180,31 +180,33 @@ SignalLite.prototype = {
 // IE 8 and lower
 if ( !document.addEventListener )
 {
-	document.documentElement[ SIGNAL_EVENT ] = 0;
+	var elm = document.documentElement;
+	elm[ SIGNAL_EVENT ] = 0;
 	
-	getSignalClosure = function( signal, node, args ) {
-		return function listener( event )
-		{
-			if (event.propertyName == SIGNAL_EVENT) {
-				document.documentElement.detachEvent( "onpropertychange",
-					 // using named inline ref (listener) didn't work here...
-					arguments.callee, false
-				);
-				node.listener.apply( node.target || signal.target, args );
-			}
-		};
-	};
-	SignalLite.prototype.dispatch = function dispatch()
+	SignalLite.prototype.dispatch = function()
 	{
+		function getSignalClosure( signal, node, args ) {
+			return function( event )
+			{
+				if (event.propertyName == SIGNAL_EVENT) {
+					elm.detachEvent( "onpropertychange",
+						 // using named inline ref (listener) didn't work here...
+						arguments.callee, false
+					);
+					node.listener.apply( node.target || signal.target, args );
+				}
+			};
+		}
+		
 		var node = this.first;
 		while ( node = node.next ) {
-			document.documentElement.attachEvent( "onpropertychange",
+			elm.attachEvent( "onpropertychange",
 				getSignalClosure( this, node, arguments ), false
 			);
 		}
 		
 		// triggers the property change event
-		++document.documentElement[ SIGNAL_EVENT ];
+		++elm[ SIGNAL_EVENT ];
 	};
 }
 
