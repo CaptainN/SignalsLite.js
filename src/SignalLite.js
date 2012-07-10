@@ -144,11 +144,13 @@ SignalLite.prototype = {
 	 */
 	dispatch: function dispatch()
 	{
-		function getSignalClosure( signal, node, args ) {
-			return function listener() {
-				document.removeEventListener( SIGNAL_EVENT, listener, false );
+		var args = arguments;
+		
+		function getSignalClosure( listener, target ) {
+			return function closure() {
+				document.removeEventListener( SIGNAL_EVENT, closure, false );
 				try {
-					node.listener.apply( node.target || signal.target, args );
+					listener.apply( target, args );
 				}
 				catch ( e ) {
 					// Firefox is supporessing this for some reason, so we'll 
@@ -160,19 +162,19 @@ SignalLite.prototype = {
 			};
 		}
 		
-		var se = document.createEvent( "UIEvents" );
-		se.initEvent( SIGNAL_EVENT, false, false );
-		
-		var node = this.first;
-		
 		// Building this dispatch list essentially copies the dispatch list, so 
 		// add/removes during dispatch won't have any effect. BONUS~!
+		var node = this.first;
 		while ( node = node.next ) {
 			document.addEventListener( SIGNAL_EVENT,
-				getSignalClosure( this, node, arguments ), false
+				getSignalClosure( node.listener,
+					node.target || this.target
+				), false
 			);
 		}
 		
+		var se = document.createEvent( "UIEvents" );
+		se.initEvent( SIGNAL_EVENT, false, false );
 		document.dispatchEvent( se );
 	}
 };
@@ -185,15 +187,17 @@ if ( !document.addEventListener )
 	
 	SignalLite.prototype.dispatch = function()
 	{
-		function getSignalClosure( signal, node, args ) {
+		var args = arguments;
+		
+		function getSignalClosure( listener, target ) {
 			return function( event )
 			{
 				if (event.propertyName == SIGNAL_EVENT) {
 					elm.detachEvent( "onpropertychange",
-						 // using named inline ref (listener) didn't work here...
+						 // using named inline function ref didn't work here...
 						arguments.callee, false
 					);
-					node.listener.apply( node.target || signal.target, args );
+					listener.apply( target, args );
 				}
 			};
 		}
@@ -201,7 +205,9 @@ if ( !document.addEventListener )
 		var node = this.first;
 		while ( node = node.next ) {
 			elm.attachEvent( "onpropertychange",
-				getSignalClosure( this, node, arguments ), false
+				getSignalClosure( node.listener,
+					node.target || this.target
+				 ), false
 			);
 		}
 		
