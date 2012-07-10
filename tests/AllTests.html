@@ -182,7 +182,28 @@ test("dispatching with thisArg", function() {
 	}, target2 );
 	signaled.dispatch();
 } );
+
+test("errors during dispatching", function() {
 	
+	var signaled = new SignalLite();
+	
+	var signaledCount = 0;
+	
+	// http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/
+	signaled.add( function() {
+		signaledCount++;
+		DOES_NOT_EXIST++; // this will throw an error
+	} );
+	
+	signaled.add( function() {
+		signaledCount++;
+	} );
+	
+	signaled.dispatch();
+	
+	equal( signaledCount, 2, "Both listeners should have incremented signaledCount." );
+} );
+
 })();
 </script>
 </body>
