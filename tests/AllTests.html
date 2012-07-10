@@ -14,7 +14,7 @@
 <h2 id="qunit-userAgent"></h2>
 <ol id="qunit-tests"></ol>
 <script>
-(function() { "use strict";
+(function(undefined) { "use strict";
 
 var tested = new SignalLite();
 
@@ -199,7 +199,16 @@ test("errors during dispatching", function() {
 		signaledCount++;
 	} );
 	
+	// There doesn't appear to be a way to properly detect async global errors,
+	// so disable it. Also have to unhook QUnit's onerror handler, because it 
+	// suppresses the errors if you set it to ignoreGlobalErrors.
+	QUnit.config.current.ignoreGlobalErrors = true;
+	var qOnError = window.onerror;
+	window.onerror = undefined;
 	signaled.dispatch();
+	// put it all back
+	QUnit.config.current.ignoreGlobalErrors = undefined;
+	window.onerror = qOnError;
 	
 	equal( signaledCount, 2, "Both listeners should have incremented signaledCount." );
 } );
