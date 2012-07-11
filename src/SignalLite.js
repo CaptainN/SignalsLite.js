@@ -154,6 +154,8 @@ SignalLite.prototype = {
 	 */
 	dispatch: function dispatch()
 	{
+		if ( this.first === this.last ) return;
+		
 		var args = arguments;
 		var sigEvtName = SIGNAL_EVENT + (++signal_key);
 		
@@ -221,6 +223,8 @@ if ( !document.addEventListener )
 	
 	SignalLite.prototype.dispatch = function()
 	{
+		if ( this.first === this.last ) return;
+		
 		var sigEvtName = SIGNAL_EVENT + (++signal_key);
 		
 		elm[ sigEvtName ] = 0;
@@ -239,20 +243,25 @@ if ( !document.addEventListener )
 			};
 		}
 		
-		var node = this.first;
-		while ( node = node.next ) {
+		// NOTE: IE dispatches in reverse order, so we need to
+		// attach the events backwards.
+		var node = this.last;
+		do {
+			if (this.first == node)
+				break;
+			
 			elm.attachEvent( "onpropertychange",
 				getSignalClosure( node.listener,
 					node.target || this.target
 				), false
 			);
 		}
+		while ( node = node.prev );
 		
 		// triggers the property change event
+		elm[ sigEvtName ]++;
 		elm[ sigEvtName ] = null;
 	};
-	
-	
 }
 
 // This has to be assigned here, rather than inline because of bugs in IE7/IE8

@@ -105,6 +105,9 @@ test("normal dispatching", function()
 {
 	var signaled = new SignalLite();
 	
+	// empty dispatch should not trigger an error.
+	signaled.dispatch();
+	
 	var dispatchedCount = 0;
 	var listener = function() {
 		dispatchedCount++;
@@ -212,6 +215,30 @@ test("errors during dispatching", function() {
 	window.onerror = qOnError;
 	
 	equal( signaledCount, 2, "Error in first listener should not stop second listener from executing." );
+} );
+
+test( "dispatch in order", function() {
+	
+	expect( 1 );
+	
+	var signaled = new SignalLite();
+	
+	var dispatched = [];
+	
+	signaled.add( function() {
+		dispatched.push( 1 );
+	} );
+	signaled.add( function() {
+		dispatched.push( 2 );
+	} );
+	signaled.add( function() {
+		dispatched.push( 3 );
+	} );
+	
+	signaled.dispatch();
+	
+	deepEqual( dispatched, [1,2,3], "The signaled should have fired in order" );
+	
 } );
 
 test( "dispatch within a dispatch", function() {
