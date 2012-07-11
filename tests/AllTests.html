@@ -247,9 +247,44 @@ test( "dispatch within a dispatch", function() {
 	
 	signaled1.dispatch();
 	
-	equal( count1, count2, "Each signaled should have dispatched to the same number of listeners");
+	equal( count1, count2, "Each signaled should have dispatched to the same number of listeners" );
 } );
 
+test( "namespaces", function() {
+	
+	var signaled = new SignalLite();
+	
+	var count = 0;
+	
+	signaled.ns( "namespace1" ).add( function() {
+		count++;
+	} );
+	signaled.ns( "namespace1" ).add( function() {
+		count++;
+	} );
+	signaled.add( function() {
+		count++;
+	} );
+	
+	//signaled.dispatch( "namespace1" );
+	//equal( count, 2, "namespace dispatched should have only hit two listeners" );
+	
+	count = 0;
+	signaled.dispatch();
+	equal( count, 3, "unnamespaced dispatch should have hit all 3 listeners" );
+	
+	signaled.ns( "namespace1" ).remove();
+	count = 0;
+	signaled.dispatch();
+	equal( count, 1, "should only be one listener left" );
+	
+	signaled.ns( "namespace1" ).once( function() {} );
+	signaled.ns( "namespace1" ).add( function() {} );
+	equal( signaled.getLength(), 3, "Should be three listeners" );
+	signaled.ns( "namespace1" ).remove();
+	equal( signaled.getLength(), 1, "Should be only one left, after clearing the namespace" );
+	
+} );
 
 })();
 </script>

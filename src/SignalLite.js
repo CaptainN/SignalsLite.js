@@ -1,8 +1,8 @@
-﻿(function() { "use strict";
+﻿(function( undefined ) { "use strict";
 
 var SIGNAL_EVENT = "SignalLiteEvent",
 	signal_key = 0,
-
+	_namespace = null,
 	ua = navigator.userAgent,
 	isFirefox = ua.indexOf( "compatible" ) < 0 &&
 		/Mozilla(.*)rv:(.*)Gecko/.test( ua );
@@ -16,6 +16,7 @@ function SlotLite( listener, target ) {
 	this.prev = null; // SlotLite
 	this.listener = listener; // Function
 	this.target = target;
+	this.namespace = null;
 }
 
 /**
@@ -55,6 +56,7 @@ SignalLite.prototype = {
 		this.last.next = new SlotLite( listener, target );
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
+		this.last.namespace = _namespace;
 	},
 	
 	/**
@@ -112,23 +114,30 @@ SignalLite.prototype = {
 	/**
 	 * Remove a listener for this Signal.
 	 */
-	remove: function removeListener( listener )
+	remove: function remove( listener )
 	{
 		if ( this.first === this.last ) return;
 		
 		var node = this.first;
 		
+		function cutNode()
+		{
+			node.prev.next = node.next;
+			if ( node.next )
+				node.next.prev = node.prev;
+			if ( this.last === node )
+				this.last = node.prev;
+		}
+		
 		while ( node.next )
 		{
 			node = node.next;
 			
-			if ( node.listener === listener )
-			{
-				node.prev.next = node.next;
-				if ( node.next )
-					node.next.prev = node.prev;
-				if ( this.last === node )
-					this.last = node.prev;
+			if ( _namespace && node.namespace == _namespace ) {
+				cutNode.apply( this );
+			}
+			else if ( node.listener === listener ) {
+				cutNode.apply( this );
 				break;
 			}
 		}
@@ -146,7 +155,7 @@ SignalLite.prototype = {
 	dispatch: function dispatch()
 	{
 		var sigEvtName = SIGNAL_EVENT + (++signal_key);
-		console.log( sigEvtName );
+		
 		function getSignalClosure( signal, node, args ) {
 			return function listener() {
 				document.removeEventListener( sigEvtName, listener, false );
@@ -177,6 +186,30 @@ SignalLite.prototype = {
 		}
 		
 		document.dispatchEvent( se );
+	},
+	
+	ns: function( namespace )
+	{
+		var signal = this;
+		return {
+			add: function( listener, target ) {
+				_namespace = namespace;
+				signal.add( listener, target );
+				_namespace = null;
+			},
+			remove: function()
+			{
+				_namespace = namespace;
+				signal.remove();
+				_namespace = null;
+			},
+			once: function( listener, target )
+			{
+				_namespace = namespace;
+				signal.once( listener, target );
+				_namespace = null;
+			}
+		}
 	}
 };
 
