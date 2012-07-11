@@ -213,6 +213,88 @@ test("errors during dispatching", function() {
 	equal( signaledCount, 2, "Error in first listener should not stop second listener from executing." );
 } );
 
+test( "dispatch within a dispatch", function() {
+	
+	expect( 9 );
+	
+	var signaled1 = new SignalLite();
+	var signaled2 = new SignalLite();
+	
+	var count1 = 0;
+	var count2 = 0;
+	
+	signaled1.add( function() {
+		count1++;
+		equal( count1, 1, "count1 should be 1 - first iterator" );
+	} );
+	signaled1.add( function() {
+		equal( count1, 1, "count1 should be 1 before signaled2 is dispatched" );
+		signaled2.dispatch();
+		equal( count1, 1, "count1 should still be 1 after signaled2 is dispatched" );
+	} );
+	signaled1.add( function() {
+		count1++;
+		equal( count1, 2, "count1 should be 2 - second iterator" );
+	} );
+	signaled1.add( function() {
+		count1++;
+		equal( count1, 3, "count1 should be 3 - third iterator" );
+	} );
+	
+	signaled2.add( function() {
+		count2++;
+		equal( count2, 1, "count2 should be  - first iterator2" );
+	} );
+	signaled2.add( function() {
+		count2++;
+		equal( count2, 2, "count2 should be 2 - second iterator2" );
+	} );
+	signaled2.add( function() {
+		count2++;
+		equal( count2, 3, "count2 should be 3 - third iterator2" );
+	} );
+	
+	signaled1.dispatch();
+	
+	equal( count1, count2, "Each signaled should have dispatched to the same number of listeners" );
+} );
+
+test( "namespaces", function() {
+	
+	var signaled = new SignalLite();
+	
+	var count = 0;
+	
+	signaled.ns( "namespace1" ).add( function() {
+		count++;
+	} );
+	signaled.ns( "namespace1" ).add( function() {
+		count++;
+	} );
+	signaled.add( function() {
+		count++;
+	} );
+	
+	//signaled.dispatch( "namespace1" );
+	//equal( count, 2, "namespace dispatched should have only hit two listeners" );
+	
+	count = 0;
+	signaled.dispatch();
+	equal( count, 3, "unnamespaced dispatch should have hit all 3 listeners" );
+	
+	signaled.ns( "namespace1" ).remove();
+	count = 0;
+	signaled.dispatch();
+	equal( count, 1, "should only be one listener left" );
+	
+	signaled.ns( "namespace1" ).once( function() {} );
+	signaled.ns( "namespace1" ).add( function() {} );
+	equal( signaled.getLength(), 3, "Should be three listeners" );
+	signaled.ns( "namespace1" ).remove();
+	equal( signaled.getLength(), 1, "Should be only one left, after clearing the namespace" );
+	
+} );
+
 })();
 </script>
 </body>

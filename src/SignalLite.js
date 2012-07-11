@@ -1,10 +1,11 @@
-﻿(function() { "use strict";
+﻿(function( undefined ) { "use strict";
 
-var SIGNAL_EVENT = "signalLiteEvent";
-
-var ua = navigator.userAgent;
-var isFirefox = ua.indexOf( "compatible" ) < 0 &&
-	/Mozilla(.*)rv:(.*)Gecko/.test( ua );
+var SIGNAL_EVENT = "SignalLiteEvent",
+	signal_key = 0,
+	_namespace = null,
+	ua = navigator.userAgent,
+	isFirefox = ua.indexOf( "compatible" ) < 0 &&
+		/Mozilla(.*)rv:(.*)Gecko/.test( ua );
 
 /**
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
@@ -15,6 +16,7 @@ function SlotLite( listener, target ) {
 	this.prev = null; // SlotLite
 	this.listener = listener; // Function
 	this.target = target;
+	this.namespace = null;
 }
 
 /**
@@ -54,6 +56,7 @@ SignalLite.prototype = {
 		this.last.next = new SlotLite( listener, target );
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
+		this.last.namespace = _namespace;
 	},
 	
 	/**
@@ -111,23 +114,30 @@ SignalLite.prototype = {
 	/**
 	 * Remove a listener for this Signal.
 	 */
-	remove: function removeListener( listener )
+	remove: function remove( listener )
 	{
 		if ( this.first === this.last ) return;
 		
 		var node = this.first;
 		
+		function cutNode()
+		{
+			node.prev.next = node.next;
+			if ( node.next )
+				node.next.prev = node.prev;
+			if ( this.last === node )
+				this.last = node.prev;
+		}
+		
 		while ( node.next )
 		{
 			node = node.next;
 			
-			if ( node.listener === listener )
-			{
-				node.prev.next = node.next;
-				if ( node.next )
-					node.next.prev = node.prev;
-				if ( this.last === node )
-					this.last = node.prev;
+			if ( _namespace && node.namespace == _namespace ) {
+				cutNode.apply( this );
+			}
+			else if ( node.listener === listener ) {
+				cutNode.apply( this );
 				break;
 			}
 		}
@@ -145,10 +155,11 @@ SignalLite.prototype = {
 	dispatch: function dispatch()
 	{
 		var args = arguments;
+		var sigEvtName = SIGNAL_EVENT + (++signal_key);
 		
 		function getSignalClosure( listener, target ) {
 			return function closure() {
-				document.removeEventListener( SIGNAL_EVENT, closure, false );
+				document.removeEventListener( sigEvtName, listener, false );
 				try {
 					listener.apply( target, args );
 				}
@@ -162,11 +173,16 @@ SignalLite.prototype = {
 			};
 		}
 		
+		var se = document.createEvent( "UIEvents" );
+		se.initEvent( sigEvtName, false, false );
+		
+		var node = this.first;
+		
 		// Building this dispatch list essentially copies the dispatch list, so 
 		// add/removes during dispatch won't have any effect. BONUS~!
 		var node = this.first;
 		while ( node = node.next ) {
-			document.addEventListener( SIGNAL_EVENT,
+			document.addEventListener( sigEvtName,
 				getSignalClosure( node.listener,
 					node.target || this.target
 				), false
@@ -176,6 +192,30 @@ SignalLite.prototype = {
 		var se = document.createEvent( "UIEvents" );
 		se.initEvent( SIGNAL_EVENT, false, false );
 		document.dispatchEvent( se );
+	},
+	
+	ns: function( namespace )
+	{
+		var signal = this;
+		return {
+			add: function( listener, target ) {
+				_namespace = namespace;
+				signal.add( listener, target );
+				_namespace = null;
+			},
+			remove: function()
+			{
+				_namespace = namespace;
+				signal.remove();
+				_namespace = null;
+			},
+			once: function( listener, target )
+			{
+				_namespace = namespace;
+				signal.once( listener, target );
+				_namespace = null;
+			}
+		}
 	}
 };
 
@@ -183,16 +223,17 @@ SignalLite.prototype = {
 if ( !document.addEventListener )
 {
 	var elm = document.documentElement;
-	elm[ SIGNAL_EVENT ] = 0;
 	
 	SignalLite.prototype.dispatch = function()
 	{
 		var args = arguments;
+		var fakeEvtName = SIGNAL_EVENT + (++signal_key);
+		elm[ fakeEvtName ] = 0;
 		
 		function getSignalClosure( listener, target ) {
 			return function( event )
 			{
-				if (event.propertyName == SIGNAL_EVENT) {
+				if (event.propertyName == fakeEvtName) {
 					elm.detachEvent( "onpropertychange",
 						 // using named inline function ref didn't work here...
 						arguments.callee, false
@@ -212,7 +253,7 @@ if ( !document.addEventListener )
 		}
 		
 		// triggers the property change event
-		++elm[ SIGNAL_EVENT ];
+		elm[ fakeEvtName ] = undefined;
 	};
 }
 
