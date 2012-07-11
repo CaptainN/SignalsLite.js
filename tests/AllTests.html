@@ -204,7 +204,8 @@ test("errors during dispatching", function() {
 	// suppresses the errors if you set it to ignoreGlobalErrors.
 	QUnit.config.current.ignoreGlobalErrors = true;
 	var qOnError = window.onerror;
-	window.onerror = undefined;
+	// NOTE: window.onerror is broken in IE8 and lower, and Firefox.
+	window.onerror = function() {};
 	signaled.dispatch();
 	// put it all back
 	QUnit.config.current.ignoreGlobalErrors = undefined;

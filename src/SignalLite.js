@@ -185,7 +185,7 @@ SignalLite.prototype = {
 		}
 		
 		var se = document.createEvent( "UIEvents" );
-		se.initEvent( SIGNAL_EVENT, false, false );
+		se.initEvent( sigEvtName, false, false );
 		document.dispatchEvent( se );
 	},
 	
@@ -221,14 +221,15 @@ if ( !document.addEventListener )
 	
 	SignalLite.prototype.dispatch = function()
 	{
-		var args = arguments;
-		var fakeEvtName = SIGNAL_EVENT + (++signal_key);
-		elm[ fakeEvtName ] = 0;
+		var sigEvtName = SIGNAL_EVENT + (++signal_key);
 		
+		elm[ sigEvtName ] = 0;
+		
+		var args = arguments;
 		function getSignalClosure( listener, target ) {
 			return function( event )
 			{
-				if (event.propertyName == fakeEvtName) {
+				if (event.propertyName == sigEvtName) {
 					elm.detachEvent( "onpropertychange",
 						 // using named inline function ref didn't work here...
 						arguments.callee, false
@@ -243,13 +244,15 @@ if ( !document.addEventListener )
 			elm.attachEvent( "onpropertychange",
 				getSignalClosure( node.listener,
 					node.target || this.target
-				 ), false
+				), false
 			);
 		}
 		
 		// triggers the property change event
-		elm[ fakeEvtName ] = undefined;
+		elm[ sigEvtName ] = null;
 	};
+	
+	
 }
 
 // This has to be assigned here, rather than inline because of bugs in IE7/IE8
