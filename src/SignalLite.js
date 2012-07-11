@@ -1,10 +1,11 @@
 ﻿(function() { "use strict";
 
-var SIGNAL_EVENT = "signalLiteEvent";
+var SIGNAL_EVENT = "SignalLiteEvent",
+	signal_key = 0,
 
-var ua = navigator.userAgent;
-var isFirefox = ua.indexOf( "compatible" ) < 0 &&
-	/Mozilla(.*)rv:(.*)Gecko/.test( ua );
+	ua = navigator.userAgent,
+	isFirefox = ua.indexOf( "compatible" ) < 0 &&
+		/Mozilla(.*)rv:(.*)Gecko/.test( ua );
 
 /**
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
@@ -144,9 +145,11 @@ SignalLite.prototype = {
 	 */
 	dispatch: function dispatch()
 	{
+		var sigEvtName = SIGNAL_EVENT + (++signal_key);
+		console.log( sigEvtName );
 		function getSignalClosure( signal, node, args ) {
 			return function listener() {
-				document.removeEventListener( SIGNAL_EVENT, listener, false );
+				document.removeEventListener( sigEvtName, listener, false );
 				try {
 					node.listener.apply( node.target || signal.target, args );
 				}
@@ -161,14 +164,14 @@ SignalLite.prototype = {
 		}
 		
 		var se = document.createEvent( "UIEvents" );
-		se.initEvent( SIGNAL_EVENT, false, false );
+		se.initEvent( sigEvtName, false, false );
 		
 		var node = this.first;
 		
 		// Building this dispatch list essentially copies the dispatch list, so 
 		// add/removes during dispatch won't have any effect. BONUS~!
 		while ( node = node.next ) {
-			document.addEventListener( SIGNAL_EVENT,
+			document.addEventListener( sigEvtName,
 				getSignalClosure( this, node, arguments ), false
 			);
 		}
@@ -181,14 +184,16 @@ SignalLite.prototype = {
 if ( !document.addEventListener )
 {
 	var elm = document.documentElement;
-	elm[ SIGNAL_EVENT ] = 0;
 	
 	SignalLite.prototype.dispatch = function()
 	{
+		var fakeEvtName = SIGNAL_EVENT + (++signal_key);
+		elm[ fakeEvtName ] = 0;
+		
 		function getSignalClosure( signal, node, args ) {
 			return function( event )
 			{
-				if (event.propertyName == SIGNAL_EVENT) {
+				if (event.propertyName == fakeEvtName) {
 					elm.detachEvent( "onpropertychange",
 						 // using named inline ref (listener) didn't work here...
 						arguments.callee, false
@@ -206,7 +211,7 @@ if ( !document.addEventListener )
 		}
 		
 		// triggers the property change event
-		++elm[ SIGNAL_EVENT ];
+		elm[ fakeEvtName ] = undefined;
 	};
 }
 
