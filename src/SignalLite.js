@@ -173,11 +173,6 @@ SignalLite.prototype = {
 			};
 		}
 		
-		var se = document.createEvent( "UIEvents" );
-		se.initEvent( sigEvtName, false, false );
-		
-		var node = this.first;
-		
 		// Building this dispatch list essentially copies the dispatch list, so 
 		// add/removes during dispatch won't have any effect. BONUS~!
 		var node = this.first;
