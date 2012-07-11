@@ -42,6 +42,37 @@ function SignalLite( target )
 	 * The value of this in listeners when dispatching.
 	 */
 	this.target = target;
+	
+	var signal = this;
+	
+	this.ns = {
+		add: function( namespace )
+		{
+			signal[ namespace ] = {
+				add: function( listener, target )
+				{
+					_namespace = namespace;
+					signal.add( listener, target );
+					_namespace = null;
+				},
+				remove: function()
+				{
+					_namespace = namespace;
+					signal.remove();
+					_namespace = null;
+				},
+				once: function( listener, target )
+				{
+					_namespace = namespace;
+					signal.once( listener, target );
+					_namespace = null;
+				}
+			};
+		},
+		remove: function( namespace ) {
+			delete signal[ namespace ];
+		}
+	};
 };
 
 SignalLite.prototype = {
@@ -189,30 +220,6 @@ SignalLite.prototype = {
 		var se = document.createEvent( "UIEvents" );
 		se.initEvent( sigEvtName, false, false );
 		document.dispatchEvent( se );
-	},
-	
-	ns: function( namespace )
-	{
-		var signal = this;
-		return {
-			add: function( listener, target ) {
-				_namespace = namespace;
-				signal.add( listener, target );
-				_namespace = null;
-			},
-			remove: function()
-			{
-				_namespace = namespace;
-				signal.remove();
-				_namespace = null;
-			},
-			once: function( listener, target )
-			{
-				_namespace = namespace;
-				signal.once( listener, target );
-				_namespace = null;
-			}
-		}
 	}
 };
 
