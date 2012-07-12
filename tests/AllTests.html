@@ -332,10 +332,14 @@ test( "addToTop", function() {
 	var dispatched = [];
 	
 	signaled.add( function() {
-		dispatched.push( 2 );
+		dispatched.push( 3 );
 	} );
 	signaled.add( function() {
-		dispatched.push( 3 );
+		dispatched.push( 4 );
+	} );
+	signaled.ns.add("module1");
+	signaled.module1.addToTop( function() {
+		dispatched.push( 2 );
 	} );
 	signaled.addToTop( function() {
 		dispatched.push( 1 );
@@ -343,7 +347,7 @@ test( "addToTop", function() {
 	
 	signaled.dispatch();
 	
-	deepEqual( dispatched, [1,2,3], "The signaled should have fired in the correct order, third signal first." );
+	deepEqual( dispatched, [1,2,3,4], "The signaled should have fired in the correct order, third signal first." );
 	
 } );
 

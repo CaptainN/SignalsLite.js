@@ -55,6 +55,12 @@ function SignalLite( target )
 					signal.add( listener, target );
 					_namespace = null;
 				},
+				addToTop: function( listener, target )
+				{
+					_namespace = namespace;
+					signal.addToTop( listener, target );
+					_namespace = null;
+				},
 				remove: function()
 				{
 					_namespace = namespace;
