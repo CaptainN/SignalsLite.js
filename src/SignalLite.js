@@ -22,9 +22,12 @@ function SlotLite( listener, target ) {
 /**
  * A lite version of Robert Penner's AS3 Signals, for JavaScript.
  * @param target The value of this in listeners when dispatching.
+ * @param eachReturn A callback to handle the return value of each listener.
+ * @param eachError A callback to handle errors in each listener, when they occur.
+ * This is especially useful for Firefox which suppresses erros inside listeners.
  * @author Kevin Newman
  */
-function SignalLite( target )
+function SignalLite( target, eachReturn, eachError )
 {
 	/**
 	 * The empty first slot in a linked set.
@@ -42,6 +45,16 @@ function SignalLite( target )
 	 * The value of this in listeners when dispatching.
 	 */
 	this.target = target;
+	
+	/**
+	 * A callback to handle the return value of each listener.
+	 */
+	this.eachReturn = eachReturn;
+	
+	/**
+	 * A callback to handle errors in each listener, when they occur.
+	 */
+	this.eachError = eachError;
 	
 	var signal = this;
 	
@@ -112,6 +125,7 @@ SignalLite.prototype = {
 		var slot = new SlotLite( listener, target );
 		slot.next = this.first.next;
 		slot.prev = this.first;
+		this.first.next.prev = slot;
 		this.first.next = slot;
 		slot.namespace = _namespace;
 	},
@@ -213,20 +227,28 @@ SignalLite.prototype = {
 	{
 		if ( this.first === this.last ) return;
 		
-		var args = arguments;
+		var args = Array.prototype.slice.call(arguments);
 		var sigEvtName = SIGNAL_EVENT + (++signal_key);
+		
+		var onReturn = this.eachReturn;
+		var onError = this.eachError;
 		
 		function getSignalClosure( listener, target ) {
 			return function closure() {
 				document.removeEventListener( sigEvtName, listener, false );
 				try {
-					listener.apply( target, args );
+					var val = listener.apply( target, args );
+					if ( onReturn ) {
+						onReturn( val, args );
+					}
 				}
 				catch ( e ) {
 					// Firefox is supporessing this for some reason, so we'll 
 					// manually report the error, until I figure out why.
 					if ( isFirefox && console )
 						console.error( e );
+					if ( onError )
+						onError( e );
 					throw e;
 				}
 			};
@@ -258,11 +280,14 @@ if ( !document.addEventListener )
 	{
 		if ( this.first === this.last ) return;
 		
+		var args = Array.prototype.slice.call(arguments);
 		var sigEvtName = SIGNAL_EVENT + (++signal_key);
+		
+		var onReturn = this.eachReturn;
+		var onError = this.eachError;
 		
 		elm[ sigEvtName ] = 0;
 		
-		var args = arguments;
 		function getSignalClosure( listener, target ) {
 			return function( event )
 			{
@@ -271,7 +296,17 @@ if ( !document.addEventListener )
 						 // using named inline function ref didn't work here...
 						arguments.callee, false
 					);
-					listener.apply( target, args );
+					try {
+						var val = listener.apply( target, args );
+						console.log( onReturn );
+						if ( onReturn )
+							onReturn( val, args );
+					}
+					catch ( e ) {
+						if ( onError )
+							onError( e );
+						throw e;
+					}
 				}
 			};
 		}

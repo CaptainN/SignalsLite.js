@@ -347,7 +347,41 @@ test( "addToTop", function() {
 	
 	signaled.dispatch();
 	
-	deepEqual( dispatched, [1,2,3,4], "The signaled should have fired in the correct order, third signal first." );
+	deepEqual( dispatched, [1,2,3,4], "The signaled should have fired in the correct order, fourth signal first." );
+	
+} );
+
+test( "return handler", function() {
+	
+	var signaled = new SignalLite();
+	
+	var value_tofilter = "some value of stuff";
+	
+	// use this or a factory method
+	var wpFilter = {
+		value_filter: new SignalLite( null,
+			function( value, args ) {
+				value_tofilter = value;
+				args[ 0 ] = value;
+			}
+		)
+	};
+	
+	// ... in client code - user of the filter
+	wpFilter.value_filter.add( function( value ) {
+		value = value.replace( "some", "THE" );
+		return value;
+	} );
+	
+	wpFilter.value_filter.add( function( value ) {
+		value = value.replace( "stuff", "things" );
+		return value;
+	} );
+	
+	// ... back in core code - dispatching the filter
+	wpFilter.value_filter.dispatch( value_tofilter );
+	
+	equal( value_tofilter, "THE value of things", '"some" should be "THE" and "stuff" should be "things"' );
 	
 } );
 
