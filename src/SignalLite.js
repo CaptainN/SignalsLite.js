@@ -91,6 +91,26 @@ SignalLite.prototype = {
 	},
 	
 	/**
+	 * Add a listener for this Signal in the first position.
+	 * Pushes the first item to the second position. If the listener
+	 * is already registered, it'll move it to the top.
+	 * @param listener The function to be called when the signal fires.
+	 * @param target The value of this in listeners when dispatching only this listener.
+	 */
+	addToTop: function( listener, target )
+	{
+		if ( this.has( listener ) ) {
+			this.remove( listener );
+			this.addToTop( listener );
+		}
+		var slot = new SlotLite( listener, target );
+		slot.next = this.first.next;
+		slot.prev = this.first;
+		this.first.next = slot;
+		slot.namespace = _namespace;
+	},
+	
+	/**
 	 * Checks if the Signal contains a specific listener.
 	 * @param listener The listener to check for.
 	 * @return Whether or not the listener is in the queue for this signal.
