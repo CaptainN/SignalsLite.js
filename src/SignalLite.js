@@ -106,7 +106,7 @@ function SignalLite( target, eachReturn, eachError )
 			delete signal[ namespace ];
 		}
 	};
-};
+}
 
 function cutNode( node )
 {
@@ -310,14 +310,13 @@ if ( !document.addEventListener )
 		function getSignalClosure( listener, target ) {
 			return function( event )
 			{
-				if (event.propertyName == sigEvtName) {
+				if (event.propertyName === sigEvtName) {
 					elm.detachEvent( "onpropertychange",
 						 // using named inline function ref didn't work here...
 						arguments.callee, false
 					);
 					try {
 						var val = listener.apply( target, args );
-						console.log( onReturn );
 						if ( onReturn )
 							onReturn( val, args );
 					}
@@ -334,7 +333,7 @@ if ( !document.addEventListener )
 		// attach the events backwards.
 		var node = this.last;
 		do {
-			if (this.first == node)
+			if (this.first === node)
 				break;
 			
 			elm.attachEvent( "onpropertychange",
