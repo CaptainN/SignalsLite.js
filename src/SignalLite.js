@@ -74,11 +74,25 @@ function SignalLite( target, eachReturn, eachError )
 					signal.addToTop( listener, target );
 					_namespace = null;
 				},
-				remove: function()
+				remove: function( listener )
 				{
+					if ( !listener ) return;
 					_namespace = namespace;
-					signal.remove();
+					signal.remove( listener );
 					_namespace = null;
+				},
+				removeAll: function()
+				{
+					if ( signal.first === signal.last ) return;
+					
+					var node = signal.first;
+					
+					while ( node = node.next )
+						if ( node.namespace === namespace )
+							cutNode.call( signal, node );
+					
+					if ( signal.first === signal.last )
+						signal.first.next = null;
 				},
 				once: function( listener, target )
 				{
@@ -93,6 +107,15 @@ function SignalLite( target, eachReturn, eachError )
 		}
 	};
 };
+
+function cutNode( node )
+{
+	node.prev.next = node.next;
+	if ( node.next )
+		node.next.prev = node.prev;
+	if ( this.last === node )
+		this.last = node.prev;
+}
 
 SignalLite.prototype = {
 	/**
@@ -184,6 +207,7 @@ SignalLite.prototype = {
 	
 	/**
 	 * Remove a listener for this Signal.
+	 * @param listener The function to be removed from the signal.
 	 */
 	remove: function remove( listener )
 	{
@@ -191,31 +215,26 @@ SignalLite.prototype = {
 		
 		var node = this.first;
 		
-		function cutNode()
-		{
-			node.prev.next = node.next;
-			if ( node.next )
-				node.next.prev = node.prev;
-			if ( this.last === node )
-				this.last = node.prev;
-		}
-		
-		while ( node.next )
-		{
-			node = node.next;
-			
-			if ( _namespace && node.namespace == _namespace ) {
-				cutNode.apply( this );
-			}
-			else if ( node.listener === listener ) {
-				cutNode.apply( this );
+		while ( node = node.next ) {
+			if ( node.listener === listener &&
+					node.namespace === _namespace ) {
+				cutNode.call( this, node );
 				break;
 			}
 		}
 		
-		if ( this.first === this.last ) {
+		if ( this.first === this.last )
 			this.first.next = null;
-		}
+	},
+	
+	/**
+	 * Remove all listeners from this Signal.
+	 */
+	removeAll: function removeAll()
+	{
+		this.first.next = null;
+		this.first.prev = null;
+		this.last = this.first;
 	},
 	
 	/**

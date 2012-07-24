@@ -21,7 +21,7 @@ var tested = new SignalLite();
 module("SignalsLite");
 
 test( "Basic Requirements", function() {
-	expect(4);
+	expect(3);
 	ok( Function.prototype.apply, "Function.apply()" );
 	ok( (function named() {
 			ok( named, "Named inline function" );
@@ -29,12 +29,12 @@ test( "Basic Requirements", function() {
 		})(),
 		"Named inline function 2"
 	);
-	var T;
+	/*var T; // This doesn't work in IE7/8
 	(function() {
 		T=function T(){}
 		T.prototype.test = 1;
 	})();
-	ok((new T).test, "Exported T should have prototype methods");
+	ok((new T).test, "Exported T should have prototype methods");*/
 });
 
 test( "after setup, with 0 listeners", function()
@@ -64,6 +64,8 @@ test("IE7/IE8 - object incorrectness", function()
 
 test("add, remove, has listener", function()
 {
+	expect( 13 );
+	
 	var signaled = new SignalLite();
 	var listener = function() {};
 	var listener2 = function() {};
@@ -88,6 +90,11 @@ test("add, remove, has listener", function()
 		"signaled should has listener2" );
 	strictEqual( signaled.getLength(), 2,
 		"signaled should have 2 listeners after adding a second listener");
+	
+	signaled.remove();
+	strictEqual( signaled.getLength(), 2,
+		"signaled should still have 2 after empty remove() call");
+	
 	signaled.remove(listener2);
 	strictEqual( signaled.getLength(), 1,
 		"signaled should have 1 listener after removing second listener");
@@ -97,8 +104,16 @@ test("add, remove, has listener", function()
 		"signaled shouldn't have listener" );
 	strictEqual( signaled.getLength(), 0,
 		"signaled should have 0 listeners");
+		
+	signaled.add( listener );
+	signaled.add( listener2 );
 	
-	signaled.remove(listener);
+	strictEqual( signaled.getLength(), 2,
+		"signaled should have 2 listeners");
+	signaled.removeAll();
+	
+	strictEqual( signaled.getLength(), 0,
+		"signaled should have 0 listeners");
 });
 
 test("normal dispatching", function()
@@ -308,21 +323,35 @@ test( "namespaces", function() {
 	signaled.dispatch();
 	equal( count, 3, "unnamespaced dispatch should have hit all 3 listeners" );
 	
-	signaled.namespace1.remove();
+	signaled.namespace1.removeAll();
 	count = 0;
 	signaled.dispatch();
 	equal( count, 1, "should only be one listener left" );
 	
 	signaled.namespace1.once( function() {} );
 	signaled.namespace1.add( function() {} );
-	equal( signaled.getLength(), 3, "Should be three listeners" );
+	equal( signaled.getLength(), 3, "Should be 3 listeners" );
 	signaled.namespace1.remove();
-	equal( signaled.getLength(), 1, "Should be only one left, after clearing the namespace" );
+	equal( signaled.getLength(), 3, "Should still be 3 listeners." );
 	
 	signaled.ns.remove( "namespace1" );
 	
 	equal( signaled.namespace1, undefined, "There should be no namespace1." );
 	
+	signaled.ns.add( "namespace2" );
+	signaled.namespace2.add( function(){} );
+	signaled.namespace2.add( new Function("") );
+	signaled.namespace2.add( function foo(){} );
+	
+	equal( signaled.getLength(), 6, "There should be 6 listeners." );
+	
+	signaled.namespace2.removeAll();
+	
+	equal( signaled.getLength(), 3, "Should be 3 listeners." );
+	
+	signaled.removeAll();
+	
+	equal( signaled.getLength(), 0, "Should be 0 listeners." );
 } );
 
 test( "addToTop", function() {
