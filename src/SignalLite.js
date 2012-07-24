@@ -333,7 +333,7 @@ if ( !document.addEventListener )
 		// attach the events backwards.
 		var node = this.last;
 		do {
-			if (this.first === node)
+			if (this.first == node)
 				break;
 			
 			elm.attachEvent( "onpropertychange",
