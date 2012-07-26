@@ -36,17 +36,19 @@ signal( target, eachReturn, eachError ) = {
 	addToTop	function ( listener, target )
 	once		function ( listener, target )
 	remove		function ( listener )
-	removeAll	functgion()
+	removeAll	function ()
 	getLength	function () // returns the number of listeners
 	dispatch	function ( ... rest )
 	eachReturn	property function
 	eachError	property function
-	ns.{namespace} = {
-		add			( listener, target )
-		addToTop	( listener, target )
-		once		( listener, target )
-		remove		( listener )
-		removeAll	()
+	ns.add		function( namespace )
+	ns.remove	function( namespace )
+	{namespace} = {
+		add			function ( listener, target )
+		addToTop	function ( listener, target )
+		once		function ( listener, target )
+		remove		function ( listener )
+		removeAll	function ()
 	}
 }
 ```
