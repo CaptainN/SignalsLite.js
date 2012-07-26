@@ -36,6 +36,7 @@ signal( target, eachReturn, eachError ) = {
 	addToTop	function ( listener, target )
 	once		function ( listener, target )
 	remove		function ( listener )
+	removeAll	functgion()
 	getLength	function () // returns the number of listeners
 	dispatch	function ( ... rest )
 	eachReturn	property function
@@ -45,6 +46,7 @@ signal( target, eachReturn, eachError ) = {
 		addToTop	( listener, target )
 		once		( listener, target )
 		remove		( listener )
+		removeAll	()
 	}
 }
 ```
@@ -58,7 +60,7 @@ There are 3 ways to add a listener to a Signal, add, once, and addToTop.
 
 '''Namespaces'''
  
-Namespace support is modeled after jQuery event namespacing. This is great because it allows you to remove listeners even when you don't have access to a reference of the listener function, as in cases where an anonymous function was added, or the listener was added in another scope or closure. Namespaces are property based, just like signals themselves. To create a namespace, register a namespace using the namespace node:
+Namespace support is modeled after jQuery event namespacing. This is great because it allows you to remove listeners even when you don't have access to a reference of the listener function, as in cases where an anonymous function was added, or the listener was added in another scope or closure. In SignalsLite.js, namespaces are property based, just like signals themselves. To create a namespace, register a namespace using the ns node:
 
 ```Javascript
 var signaled = new SignalLite();
@@ -80,7 +82,7 @@ signaled.module.add( function() {
 } )();
 
 // now we can remove the anonymous function and the scope protected listener
-signaled.module.remove();
+signaled.module.removeAll();
 
 // Yay!
 ```
