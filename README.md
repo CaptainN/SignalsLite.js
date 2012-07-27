@@ -68,7 +68,7 @@ Namespace support is modeled after jQuery event namespacing. This is great becau
 var signaled = new SignalLite();
 
 // add the namespace
-signaled.ns.add( "module" );
+signaled.namespace.add( "module" );
 
 // use the namespace
 signaled.module.add( function() {

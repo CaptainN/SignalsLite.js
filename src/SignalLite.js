@@ -1,11 +1,9 @@
 ﻿(function( undefined ) { "use strict";
 
-var SIGNAL_EVENT = "SignalLiteEvent",
-	signal_key = 0,
-	_namespace = null,
-	ua = navigator.userAgent,
-	isFirefox = ua.indexOf( "compatible" ) < 0 &&
-		/Mozilla(.*)rv:(.*)Gecko/.test( ua );
+var sig_index = 0,
+	_ns = null,
+	isFirefox = navigator.userAgent.indexOf( "compatible" ) < 0 &&
+		/Mozilla(.*)rv:(.*)Gecko/.test( navigator.userAgent );
 
 /**
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
@@ -16,7 +14,7 @@ function SlotLite( listener, target ) {
 	this.prev = null; // SlotLite
 	this.listener = listener; // Function
 	this.target = target;
-	this.namespace = null;
+	this.ns = null;
 }
 
 /**
@@ -58,28 +56,31 @@ function SignalLite( target, eachReturn, eachError )
 	
 	var signal = this;
 	
-	this.ns = {
+	this.namespace = {
 		add: function( namespace )
 		{
+			// prevents overwriting of built in props.
+			if ( signal[ namespace ] ) return;
+			
 			signal[ namespace ] = {
 				add: function( listener, target )
 				{
-					_namespace = namespace;
+					_ns = namespace;
 					signal.add( listener, target );
-					_namespace = null;
+					_ns = null;
 				},
 				addToTop: function( listener, target )
 				{
-					_namespace = namespace;
+					_ns = namespace;
 					signal.addToTop( listener, target );
-					_namespace = null;
+					_ns = null;
 				},
 				remove: function( listener )
 				{
 					if ( !listener ) return;
-					_namespace = namespace;
+					_ns = namespace;
 					signal.remove( listener );
-					_namespace = null;
+					_ns = null;
 				},
 				removeAll: function()
 				{
@@ -88,7 +89,7 @@ function SignalLite( target, eachReturn, eachError )
 					var node = signal.first;
 					
 					while ( node = node.next )
-						if ( node.namespace === namespace )
+						if ( node.ns === namespace )
 							cutNode.call( signal, node );
 					
 					if ( signal.first === signal.last )
@@ -96,9 +97,9 @@ function SignalLite( target, eachReturn, eachError )
 				},
 				once: function( listener, target )
 				{
-					_namespace = namespace;
+					_ns = namespace;
 					signal.once( listener, target );
-					_namespace = null;
+					_ns = null;
 				}
 			};
 		},
@@ -129,7 +130,7 @@ SignalLite.prototype = {
 		this.last.next = new SlotLite( listener, target );
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
-		this.last.namespace = _namespace;
+		this.last.ns = _ns;
 	},
 	
 	/**
@@ -150,7 +151,7 @@ SignalLite.prototype = {
 		slot.prev = this.first;
 		this.first.next.prev = slot;
 		this.first.next = slot;
-		slot.namespace = _namespace;
+		slot.ns = _ns;
 	},
 	
 	/**
@@ -217,7 +218,7 @@ SignalLite.prototype = {
 		
 		while ( node = node.next ) {
 			if ( node.listener === listener &&
-					node.namespace === _namespace ) {
+					node.ns === _ns ) {
 				cutNode.call( this, node );
 				break;
 			}
@@ -247,7 +248,7 @@ SignalLite.prototype = {
 		if ( this.first === this.last ) return;
 		
 		var args = Array.prototype.slice.call(arguments);
-		var sigEvtName = SIGNAL_EVENT + (++signal_key);
+		var sigEvtName = "SignalLiteEvent" + (++sig_index);
 		
 		var onReturn = this.eachReturn;
 		var onError = this.eachError;
@@ -300,7 +301,7 @@ if ( !document.addEventListener )
 		if ( this.first === this.last ) return;
 		
 		var args = Array.prototype.slice.call(arguments);
-		var sigEvtName = SIGNAL_EVENT + (++signal_key);
+		var sigEvtName = "SignalLiteEvent" + (++sig_index);
 		
 		var onReturn = this.eachReturn;
 		var onError = this.eachError;
