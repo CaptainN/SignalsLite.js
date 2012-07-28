@@ -255,7 +255,7 @@ SignalLite.prototype = {
 		
 		function getSignalClosure( listener, target ) {
 			return function closure() {
-				document.removeEventListener( sigEvtName, listener, false );
+				document.removeEventListener( sigEvtName, closure, false );
 				try {
 					var val = listener.apply( target, args );
 					if ( onReturn ) {
