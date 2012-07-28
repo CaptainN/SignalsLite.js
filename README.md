@@ -41,9 +41,9 @@ signal( target, eachReturn, eachError ) = {
 	dispatch	function ( ... rest )
 	eachReturn	property function
 	eachError	property function
-	ns.add		function( namespace )
-	ns.remove	function( namespace )
-	{namespace} = {
+	namespace.add		function( "yourNamespace" )
+	namespace.remove	function( "yourNamespace" )
+	{yourNamespace} = {
 		add			function ( listener, target )
 		addToTop	function ( listener, target )
 		once		function ( listener, target )
@@ -60,7 +60,8 @@ There are 3 ways to add a listener to a Signal, add, once, and addToTop.
 
  All add methods can take a second argument which will set the `this` variable in the listener. This is useful if you are using a property of another object as a listener, and would like the `this` variable to resolve correctly.
 
-'''Namespaces'''
+Namespaces
+----------
  
 Namespace support is modeled after jQuery event namespacing. This is great because it allows you to remove listeners even when you don't have access to a reference of the listener function, as in cases where an anonymous function was added, or the listener was added in another scope or closure. In SignalsLite.js, namespaces are property based, just like signals themselves. To create a namespace, register a namespace using the ns node:
 
@@ -90,3 +91,5 @@ signaled.module.removeAll();
 ```
 
 SignalsLite.js is unit tested.
+
+MIT License.
