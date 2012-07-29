@@ -118,13 +118,34 @@ function cutNode( node )
 		this.last = node.prev;
 }
 
+function callListener( signal, node, args )
+{
+	try {
+		var val = node.listener.apply(
+			node.target || signal.target, args
+		);
+		if ( signal.eachReturn ) {
+			signal.eachReturn( val, args );
+		}
+	}
+	catch ( e ) {
+		// Firefox is supporessing this for some reason, so we'll 
+		// manually report the error, until I figure out why.
+		if ( isFirefox && console )
+			console.error( e );
+		if ( signal.eachError )
+			signal.eachError( e );
+		throw e;
+	}
+}
+
 SignalLite.prototype = {
 	/**
 	 * Add a listener for this Signal.
 	 * @param listener The function to be called when the signal fires.
 	 * @param target The value of this in listeners when dispatching only this listener.
 	 */
-	add: function add( listener, target )
+	add: function( listener, target )
 	{
 		if ( this.has( listener ) ) return;
 		this.last.next = new SlotLite( listener, target );
@@ -159,7 +180,7 @@ SignalLite.prototype = {
 	 * @param listener The listener to check for.
 	 * @return Whether or not the listener is in the queue for this signal.
 	 */
-	has: function has( listener )
+	has: function( listener )
 	{
 		if ( this.first === this.last ) return false;
 		
@@ -177,7 +198,7 @@ SignalLite.prototype = {
 	/**
 	 * Gets the number of listeners.
 	 */
-	getLength: function getLength()
+	getLength: function()
 	{
 		var count = 0;
 		
@@ -194,7 +215,7 @@ SignalLite.prototype = {
 	 * @param listener The function to be called when the signal fires.
 	 * @param target The value of this in listeners when dispatching only this listener.
 	 */
-	once: function once( listener, target )
+	once: function( listener, target )
 	{
 		var that = this;
 		function oneTime() {
@@ -210,7 +231,7 @@ SignalLite.prototype = {
 	 * Remove a listener for this Signal.
 	 * @param listener The function to be removed from the signal.
 	 */
-	remove: function remove( listener )
+	remove: function( listener )
 	{
 		if ( this.first === this.last ) return;
 		
@@ -231,7 +252,7 @@ SignalLite.prototype = {
 	/**
 	 * Remove all listeners from this Signal.
 	 */
-	removeAll: function removeAll()
+	removeAll: function()
 	{
 		this.first.next = null;
 		this.first.prev = null;
@@ -243,34 +264,18 @@ SignalLite.prototype = {
 	 * blocking dispatch on error, and to avoid suppressing those errors.
 	 * @link http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/
 	 */
-	dispatch: function dispatch()
+	dispatch: function()
 	{
 		if ( this.first === this.last ) return;
 		
-		var args = Array.prototype.slice.call(arguments);
-		var sigEvtName = "SignalLiteEvent" + (++sig_index);
+		var args = Array.prototype.slice.call(arguments),
+			sigEvtName = "SignalLiteEvent" + (++sig_index),
+			d = document;
 		
-		var onReturn = this.eachReturn;
-		var onError = this.eachError;
-		
-		function getSignalClosure( listener, target ) {
+		function getSignalClosure( signal, node ) {
 			return function closure() {
-				document.removeEventListener( sigEvtName, closure, false );
-				try {
-					var val = listener.apply( target, args );
-					if ( onReturn ) {
-						onReturn( val, args );
-					}
-				}
-				catch ( e ) {
-					// Firefox is supporessing this for some reason, so we'll 
-					// manually report the error, until I figure out why.
-					if ( isFirefox && console )
-						console.error( e );
-					if ( onError )
-						onError( e );
-					throw e;
-				}
+				d.removeEventListener( sigEvtName, closure, false );
+				callListener( signal, node, args );
 			};
 		}
 		
@@ -278,16 +283,14 @@ SignalLite.prototype = {
 		// add/removes during dispatch won't have any effect. BONUS~!
 		var node = this.first;
 		while ( node = node.next ) {
-			document.addEventListener( sigEvtName,
-				getSignalClosure( node.listener,
-					node.target || this.target
-				), false
+			d.addEventListener( sigEvtName,
+				getSignalClosure( this, node ), false
 			);
 		}
 		
-		var se = document.createEvent( "UIEvents" );
+		var se = d.createEvent( "UIEvents" );
 		se.initEvent( sigEvtName, false, false );
-		document.dispatchEvent( se );
+		d.dispatchEvent( se );
 	}
 };
 
@@ -303,12 +306,9 @@ if ( !document.addEventListener )
 		var args = Array.prototype.slice.call(arguments);
 		var sigEvtName = "SignalLiteEvent" + (++sig_index);
 		
-		var onReturn = this.eachReturn;
-		var onError = this.eachError;
-		
 		elm[ sigEvtName ] = 0;
 		
-		function getSignalClosure( listener, target ) {
+		function getSignalClosure( signal, node ) {
 			return function( event )
 			{
 				if (event.propertyName === sigEvtName) {
@@ -316,38 +316,26 @@ if ( !document.addEventListener )
 						 // using named inline function ref didn't work here...
 						arguments.callee, false
 					);
-					try {
-						var val = listener.apply( target, args );
-						if ( onReturn )
-							onReturn( val, args );
-					}
-					catch ( e ) {
-						if ( onError )
-							onError( e );
-						throw e;
-					}
+					callListener( signal, node, args );
 				}
 			};
 		}
 		
 		// NOTE: IE dispatches in reverse order, so we need to
-		// attach the events backwards.
-		var node = this.last;
-		do {
-			if (this.first == node)
-				break;
-			
+		// attach the events backwards. Actually, this didn't
+		// always work (especially from a local disk). We'll
+		// do the slower individual dispatch method, to keep
+		// things dispatching in the correct order.
+		var node = this.first;
+		while ( node = node.next ) {
 			elm.attachEvent( "onpropertychange",
-				getSignalClosure( node.listener,
-					node.target || this.target
-				), false
+				getSignalClosure( this, node ), false
 			);
+			// triggers the property change event
+			elm[ sigEvtName ]++;
 		}
-		while ( node = node.prev );
 		
-		// triggers the property change event
-		elm[ sigEvtName ]++;
-		elm[ sigEvtName ] = null;
+		elm[ sigEvtName ] = undefined;
 	};
 }
 
