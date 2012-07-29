@@ -32,23 +32,24 @@ These are the public methods and properties provided by a SignalLite instance:
 
 ```Javascript
 signal( target, eachReturn, eachError ) = {
-	add			function ( listener, target )
-	addToTop	function ( listener, target )
-	once		function ( listener, target )
-	remove		function ( listener )
-	removeAll	function ()
-	getLength	function () // returns the number of listeners
-	dispatch	function ( ... rest )
-	eachReturn	property function
-	eachError	property function
+	add				function ( listener, target )
+	addToTop		function ( listener, target )
+	once			function ( listener, target )
+	remove			function ( listener )
+	removeAll		function ()
+	getLength		function () // returns the number of listeners
+	dispatch		function ( ... rest )
+	stopDispatch	function ()
+	eachReturn		property function
+	eachError		property function
 	namespace.add		function( "yourNamespace" )
 	namespace.remove	function( "yourNamespace" )
 	{yourNamespace} = {
-		add			function ( listener, target )
-		addToTop	function ( listener, target )
-		once		function ( listener, target )
-		remove		function ( listener )
-		removeAll	function ()
+		add				function ( listener, target )
+		addToTop		function ( listener, target )
+		once			function ( listener, target )
+		remove			function ( listener )
+		removeAll		function ()
 	}
 }
 ```
