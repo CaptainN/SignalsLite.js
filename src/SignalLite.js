@@ -333,6 +333,8 @@ if ( !document.addEventListener )
 			};
 		}
 		
+		this.dispatching = true;
+		
 		// NOTE: IE dispatches in reverse order, so we need to
 		// attach the events backwards. Actually, this didn't
 		// always work (especially from a local disk). We'll
