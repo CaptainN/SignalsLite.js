@@ -54,6 +54,12 @@ function SignalLite( target, eachReturn, eachError )
 	 */
 	this.eachError = eachError;
 	
+	/**
+	 * A simple flag to say if we are dispatching. Used by stopDispatch.
+	 * @private
+	 */
+	this.dispatching = false;
+	
 	var signal = this;
 	
 	this.namespace = {
@@ -124,9 +130,8 @@ function callListener( signal, node, args )
 		var val = node.listener.apply(
 			node.target || signal.target, args
 		);
-		if ( signal.eachReturn ) {
+		if ( signal.eachReturn )
 			signal.eachReturn( val, args );
-		}
 	}
 	catch ( e ) {
 		// Firefox is supporessing this for some reason, so we'll 
@@ -275,7 +280,8 @@ SignalLite.prototype = {
 		function getSignalClosure( signal, node ) {
 			return function closure() {
 				d.removeEventListener( sigEvtName, closure, false );
-				callListener( signal, node, args );
+				if ( signal.dispatching )
+					callListener( signal, node, args );
 			};
 		}
 		
@@ -288,9 +294,14 @@ SignalLite.prototype = {
 			);
 		}
 		
+		this.dispatching = true;
+		
 		var se = d.createEvent( "UIEvents" );
 		se.initEvent( sigEvtName, false, false );
 		d.dispatchEvent( se );
+	},
+	stopDispatch: function() {
+		this.dispatching = false;
 	}
 };
 
@@ -316,7 +327,8 @@ if ( !document.addEventListener )
 						 // using named inline function ref didn't work here...
 						arguments.callee, false
 					);
-					callListener( signal, node, args );
+					if ( signal.dispatching )
+						callListener( signal, node, args );
 				}
 			};
 		}

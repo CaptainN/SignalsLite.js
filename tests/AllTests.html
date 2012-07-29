@@ -420,6 +420,44 @@ test( "return handler", function() {
 	
 } );
 
+test( "less unstoppable", function() {
+	
+	var signal = new SignalLite();
+	
+	var dispatch_count = 0;
+	
+	signal.add( function( evt ) {
+		dispatch_count++;
+	} );
+	
+	signal.add( function( evt ) {
+		dispatch_count++;
+		evt.stopImmediatePropagation();
+	} );
+	
+	signal.add( function( evt ) {
+		// this shouldn't fire.
+		dispatch_count++;
+	} );
+	
+	signal.addToTop( function( evt ) {
+		// this should!
+		dispatch_count++;
+	} );
+	
+	// Partially simulate classic event object.
+	signal.dispatch( {
+		stopImmediatePropagation: function() {
+			signal.stopDispatch();
+		}
+	} );
+	
+	ok( dispatch_count === 3, 
+		"dispatch_count should have reached 3 - the fourth should have been\
+		skipped, because the third canceled dispatch."
+	);
+} );
+
 })();
 </script>
 </body>
