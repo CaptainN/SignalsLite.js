@@ -265,6 +265,40 @@ SignalLite.prototype = {
 	},
 	
 	/**
+	 * jQuery style trigger - fast, manual error handling recommended.
+	 */
+	trigger: function()
+	{
+		if ( this.first === this.last ) return;
+		
+		this.dispatching = true;
+		
+		var args = Array.prototype.slice.call(arguments),
+			node = this.first;
+		
+		while ( node = node.next && this.dispatching ) {
+			try {
+				var val = node.listener.apply(
+					node.target || this.target, args
+				);
+				if ( this.eachReturn )
+					this.eachReturn( val, args );
+			}
+			catch( e ) {
+				if (this.eachError)
+					this.eachError( e );
+				else
+					throw e;
+			}
+			finally {
+				continue;
+			}
+		}
+		
+		this.dispatching = false;
+	},
+	
+	/**
 	 * Dispatches an event. Uses Dean Edwards DOM dispatching to avoid 
 	 * blocking dispatch on error, and to avoid suppressing those errors.
 	 * @link http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/
