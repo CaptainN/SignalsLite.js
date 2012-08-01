@@ -383,7 +383,12 @@ if ( !document.addEventListener )
 			elm[ sigEvtName ]++;
 		}
 		
-		elm[ sigEvtName ] = undefined;
+		try {
+			delete elm[ sigEvtName ];
+		}
+		catch( e ) {
+			elm[ sigEvtName ] = null;
+		}
 	};
 }
 
