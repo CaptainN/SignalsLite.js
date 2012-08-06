@@ -5,16 +5,16 @@ var sig_index = 0,
 	isFirefox = navigator.userAgent.indexOf( "compatible" ) < 0 &&
 		/Mozilla(.*)rv:(.*)Gecko/.test( navigator.userAgent );
 
-		/**
+/**
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
  * @author Kevin Newman
  */
 function SlotLite( listener, target ) {
-        this.next = null; // SlotLite
-        this.prev = null; // SlotLite
-        this.listener = listener; // Function
-        this.target = target;
-        this.ns = null;
+	this.next = null; // SlotLite
+	this.prev = null; // SlotLite
+	this.listener = listener; // Function
+	this.target = target;
+	this.ns = null;
 }
 
 /**
