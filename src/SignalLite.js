@@ -113,6 +113,53 @@ function SignalLite( target, eachReturn, eachError )
 			delete signal[ namespace ];
 		}
 	};
+	
+	// :NOTE: Untested
+	this.priority = function( priority )
+	{
+		function priorityAdd(  listener, target, compare ) {
+			// if the listener is already linked, remove it to reinsert.
+			if ( this.has( listener ) )
+				this.remove( listener );
+			
+			// find the slot after the current priority
+			var node = this.first
+			while ( node = node.next ) {
+				if ( compare( node.priority, priority ) )
+				{
+					var slot = new SlotLite( listener, target );
+					slot.priority = priority;
+					node.prev.next = slot;
+					node.prev = slot;
+					// :TODO: work out how to mix this into namespaces
+					slot.ns = _ns;
+					return;
+				}
+			}
+			// If we got here, priority puts it at the end of the list.
+			node.next = new SlotLite( listener, target );
+			node.next.prev = node;
+			this.last = node.next;
+		}
+		return {
+			add: function( listener, target )
+			{
+				priorityAdd.call( signal, listener, target,
+					function( p1, p2 ) {
+						return p1 > p2;
+					}
+				);
+			},
+			addToTop: function( listener, target )
+			{
+				priorityAdd.call( signal, listener, target,
+					function( p1, p2 ) {
+						return p1 >= p2;
+					}
+				);
+			}
+		}
+	};
 }
 
 function cutNode( node )
