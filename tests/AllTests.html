@@ -165,6 +165,26 @@ test("normal triggering", function()
 	
 	signaled.remove( listener );
 });
+test("once dispatching", function()
+{
+	var signaled = new SignalLite();
+	
+	var dispatchedCount = 0;
+	signaled.once( function() {
+		dispatchedCount++;
+	} );
+	
+	strictEqual( dispatchedCount, 0, "dispatchedCount should be 0 before once dispatch" );
+	strictEqual( signaled.getLength(), 1, "signaled should has 1 listener" );
+	strictEqual( dispatchedCount, 0, "dispatchedCount should be 0 before dispatch" );
+	
+	signaled.dispatch();
+	strictEqual( dispatchedCount, 1, "dispatchedCount should be 1 after one dispatch" );
+	strictEqual( signaled.getLength(), 0, "signaled should has 0 listeners" );
+	
+	signaled.dispatch();
+	strictEqual( dispatchedCount, 1, "dispatchedCount should be 1 after two dispatches" );
+});
 test("once triggering", function()
 {
 	var signaled = new SignalLite();
@@ -320,12 +340,18 @@ test("errors during triggering", function() {
 	var qOnError = window.onerror;
 	// NOTE: window.onerror is broken in IE8 and lower, and Firefox.
 	window.onerror = function() {};
-	signaled.trigger();
+	
+	raises(
+		function() {
+			signaled.trigger();
+		}, "An error in a listener will hault the dispatching."
+	);
+	
 	// put it all back
 	QUnit.config.current.ignoreGlobalErrors = undefined;
 	window.onerror = qOnError;
 	
-	equal( signaledCount, 2, "Error in first listener should not stop second listener from executing." );
+	equal( signaledCount, 1, "Error in first listener should stop second listener from executing." );
 } );
 
 
