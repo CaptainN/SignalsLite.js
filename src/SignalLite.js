@@ -260,10 +260,8 @@ SignalLite.prototype = {
 	
 	/**
 	 * jQuery style trigger - fast, manual error handling recommended.
-	 * SignalLite.dispatch is a safe dispatcher, which means errors in
-	 * listeners will not fail silently, and will not block the next
-	 * listener. SignalLite.trigger does not use safe dispatching, but
-	 * is lightening fast by comparison. Use with caution.
+	 * SignalLite.trigger does not use safe dispatching, but
+	 * is lightening fast compared with SignalLite.dispatch. Use with caution.
 	 */
 	trigger: function()
 	{
@@ -274,32 +272,23 @@ SignalLite.prototype = {
 		var args = Array.prototype.slice.call(arguments),
 			node = this.first;
 		
-		while ( node = node.next && this.dispatching )
+		while ( (node = node.next) && this.dispatching )
 		{
-			try {
-				var val = node.listener.apply(
-					node.target || this.target, args
-				);
-				if ( this.eachReturn )
-					this.eachReturn( val, args );
-			}
-			catch( e ) {
-				if (this.eachError)
-					this.eachError( e );
-				else
-					throw e;
-			}
-			finally {
-				continue;
-			}
+			var val = node.listener.apply(
+				node.target || this.target, args
+			);
+			if ( this.eachReturn )
+				this.eachReturn( val, args );
 		}
 		
 		this.dispatching = false;
 	},
 	
 	/**
-	 * Dispatches an event. Uses Dean Edwards DOM dispatching to avoid 
-	 * blocking dispatch on error, and to avoid suppressing those errors.
+	 * Dispatches an event. 
+	 * SignalLite.dispatch is a safe dispatcher, which means errors in
+	 * listeners will not fail silently, and will not block the next
+	 * listener.
 	 * @link http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/
 	 */
 	dispatch: function()
