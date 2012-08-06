@@ -5,6 +5,18 @@ var sig_index = 0,
 	isFirefox = navigator.userAgent.indexOf( "compatible" ) < 0 &&
 		/Mozilla(.*)rv:(.*)Gecko/.test( navigator.userAgent );
 
+		/**
+ * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
+ * @author Kevin Newman
+ */
+function SlotLite( listener, target ) {
+        this.next = null; // SlotLite
+        this.prev = null; // SlotLite
+        this.listener = listener; // Function
+        this.target = target;
+        this.ns = null;
+}
+
 /**
  * A lite version of Robert Penner's AS3 Signals, for JavaScript.
  * @param target The value of this in listeners when dispatching.
@@ -19,7 +31,7 @@ function SignalLite( target, eachReturn, eachError )
 	 * The empty first slot in a linked set.
 	 * @private
 	 */
-	this.first = {};
+	this.first = new SlotLite;
 	
 	/**
 	 * The last Slot is initially a reference to the same slot as the first.
@@ -141,10 +153,7 @@ SignalLite.prototype = {
 	add: function( listener, target )
 	{
 		if ( this.has( listener ) ) return;
-		this.last.next = {
-			listener: listener,
-			target:target
-		};
+		this.last.next = new SlotLite( listener, target );
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
 		this.last.ns = _ns;
@@ -163,10 +172,7 @@ SignalLite.prototype = {
 			this.remove( listener );
 			this.addToTop( listener );
 		}
-		var slot = {
-			listener: listener,
-			target: target
-		};
+		var slot = new SlotLite( listener, target );
 		slot.next = this.first.next;
 		slot.prev = this.first;
 		this.first.next.prev = slot;
