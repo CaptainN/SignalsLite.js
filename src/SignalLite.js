@@ -6,18 +6,6 @@ var sig_index = 0,
 		/Mozilla(.*)rv:(.*)Gecko/.test( navigator.userAgent );
 
 /**
- * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
- * @author Kevin Newman
- */
-function SlotLite( listener, target ) {
-	this.next = null; // SlotLite
-	this.prev = null; // SlotLite
-	this.listener = listener; // Function
-	this.target = target;
-	this.ns = null;
-}
-
-/**
  * A lite version of Robert Penner's AS3 Signals, for JavaScript.
  * @param target The value of this in listeners when dispatching.
  * @param eachReturn A callback to handle the return value of each listener.
@@ -31,7 +19,7 @@ function SignalLite( target, eachReturn, eachError )
 	 * The empty first slot in a linked set.
 	 * @private
 	 */
-	this.first = new SlotLite;
+	this.first = {};
 	
 	/**
 	 * The last Slot is initially a reference to the same slot as the first.
@@ -153,7 +141,10 @@ SignalLite.prototype = {
 	add: function( listener, target )
 	{
 		if ( this.has( listener ) ) return;
-		this.last.next = new SlotLite( listener, target );
+		this.last.next = {
+			listener: listener,
+			target:target
+		};
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
 		this.last.ns = _ns;
@@ -172,7 +163,10 @@ SignalLite.prototype = {
 			this.remove( listener );
 			this.addToTop( listener );
 		}
-		var slot = new SlotLite( listener, target );
+		var slot = {
+			listener: listener,
+			target: target
+		};
 		slot.next = this.first.next;
 		slot.prev = this.first;
 		this.first.next.prev = slot;
@@ -266,6 +260,10 @@ SignalLite.prototype = {
 	
 	/**
 	 * jQuery style trigger - fast, manual error handling recommended.
+	 * SignalLite.dispatch is a safe dispatcher, which means errors in
+	 * listeners will not fail silently, and will not block the next
+	 * listener. SignalLite.trigger does not use safe dispatching, but
+	 * is lightening fast by comparison. Use with caution.
 	 */
 	trigger: function()
 	{
@@ -276,7 +274,8 @@ SignalLite.prototype = {
 		var args = Array.prototype.slice.call(arguments),
 			node = this.first;
 		
-		while ( node = node.next && this.dispatching ) {
+		while ( node = node.next && this.dispatching )
+		{
 			try {
 				var val = node.listener.apply(
 					node.target || this.target, args
