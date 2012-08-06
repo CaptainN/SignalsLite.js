@@ -16,16 +16,10 @@ var sig_index = 0,
 function SignalLite( target, eachReturn, eachError )
 {
 	/**
-	 * The empty first slot in a linked set.
+	 * The listeners
 	 * @private
 	 */
-	this.first = {};
-	
-	/**
-	 * The last Slot is initially a reference to the same slot as the first.
-	 * @private
-	 */
-	this.last = this.first;
+	this._slots = [];
 	
 	/**
 	 * The value of this in listeners when dispatching.
@@ -71,23 +65,15 @@ function SignalLite( target, eachReturn, eachError )
 				},
 				remove: function( listener )
 				{
-					if ( !listener ) return;
 					_ns = namespace;
 					signal.remove( listener );
 					_ns = null;
 				},
 				removeAll: function()
 				{
-					if ( signal.first === signal.last ) return;
-					
-					var node = signal.first;
-					
-					while ( node = node.next )
-						if ( node.ns === namespace )
-							cutNode.call( signal, node );
-					
-					if ( signal.first === signal.last )
-						signal.first.next = null;
+					for (var i = signal._slots.length - 1, slot; slot = signal._slots[ i ]; i-- )
+						if ( slot.ns === namespace )
+							signal._slots.splice( i, 1 );
 				},
 				once: function( listener, target )
 				{
@@ -101,15 +87,6 @@ function SignalLite( target, eachReturn, eachError )
 			delete signal[ namespace ];
 		}
 	};
-}
-
-function cutNode( node )
-{
-	node.prev.next = node.next;
-	if ( node.next )
-		node.next.prev = node.prev;
-	if ( this.last === node )
-		this.last = node.prev;
 }
 
 function callListener( signal, node, args )
@@ -140,14 +117,14 @@ SignalLite.prototype = {
 	 */
 	add: function( listener, target )
 	{
-		if ( this.has( listener ) ) return;
-		this.last.next = {
+		if ( this.has( listener ) )
+			return;
+		
+		this._slots.push( {
 			listener: listener,
-			target:target
-		};
-		this.last.next.prev = this.last;
-		this.last = this.last.next;
-		this.last.ns = _ns;
+			target: target,
+			ns: _ns
+		} );
 	},
 	
 	/**
@@ -163,15 +140,11 @@ SignalLite.prototype = {
 			this.remove( listener );
 			this.addToTop( listener );
 		}
-		var slot = {
+		this._slots.unshift( {
 			listener: listener,
-			target: target
-		};
-		slot.next = this.first.next;
-		slot.prev = this.first;
-		this.first.next.prev = slot;
-		this.first.next = slot;
-		slot.ns = _ns;
+			target: target,
+			ns: _ns
+		} );
 	},
 	
 	/**
@@ -181,16 +154,9 @@ SignalLite.prototype = {
 	 */
 	has: function( listener )
 	{
-		if ( this.first === this.last ) return false;
-		
-		var node = this.first;
-		do {
-			if ( node.next && node.next.listener === listener ) {
+		for (var i = 0, slot = null; slot = this._slots[ i ]; i++)
+			if (slot.listener === listener )
 				return true;
-			}
-		}
-		while( node = node.next );
-		
 		return false;
 	},
 	
@@ -199,14 +165,7 @@ SignalLite.prototype = {
 	 */
 	getLength: function()
 	{
-		var count = 0;
-		
-		var node = this.first;
-		while ( node = node.next ) {
-			++count;
-		}
-		
-		return count;
+		return this._slots.length;
 	},
 	
 	/**
@@ -232,20 +191,12 @@ SignalLite.prototype = {
 	 */
 	remove: function( listener )
 	{
-		if ( this.first === this.last ) return;
-		
-		var node = this.first;
-		
-		while ( node = node.next ) {
-			if ( node.listener === listener &&
-					node.ns === _ns ) {
-				cutNode.call( this, node );
-				break;
+		for (var i = 0, slot = null; slot = this._slots[ i ]; i++) {
+			if (slot.listener === listener && slot.ns === _ns ) {
+				this._slots.splice( i, 1 );
+				return;
 			}
 		}
-		
-		if ( this.first === this.last )
-			this.first.next = null;
 	},
 	
 	/**
@@ -253,9 +204,7 @@ SignalLite.prototype = {
 	 */
 	removeAll: function()
 	{
-		this.first.next = null;
-		this.first.prev = null;
-		this.last = this.first;
+		this._slots = [];
 	},
 	
 	/**
@@ -265,17 +214,14 @@ SignalLite.prototype = {
 	 */
 	trigger: function()
 	{
-		if ( this.first === this.last ) return;
-		
 		this.dispatching = true;
 		
-		var args = Array.prototype.slice.call(arguments),
-			node = this.first;
+		var args = Array.prototype.slice.call(arguments)
 		
-		while ( (node = node.next) && this.dispatching )
+		for (var i = 0, slot = null; slot = this._slots[ i ]; i++)
 		{
-			var val = node.listener.apply(
-				node.target || this.target, args
+			slot.listener.apply(
+				slot.target || this.target, args
 			);
 			if ( this.eachReturn )
 				this.eachReturn( val, args );
@@ -293,26 +239,26 @@ SignalLite.prototype = {
 	 */
 	dispatch: function()
 	{
-		if ( this.first === this.last ) return;
+		if ( this._slots.length < 1 ) return;
 		
 		var args = Array.prototype.slice.call(arguments),
 			sigEvtName = "SignalLiteEvent" + (++sig_index),
 			d = document;
 		
-		function getSignalClosure( signal, node ) {
+		function getSignalClosure( signal, slot ) {
 			return function closure() {
 				d.removeEventListener( sigEvtName, closure, false );
 				if ( signal.dispatching )
-					callListener( signal, node, args );
+					callListener( signal, slot, args );
 			};
 		}
 		
 		// Building this dispatch list essentially copies the dispatch list, so 
 		// add/removes during dispatch won't have any effect. BONUS~!
-		var node = this.first;
-		while ( node = node.next ) {
+		for (var i = 0, slot = null; slot = this._slots[ i ]; i++)
+		{
 			d.addEventListener( sigEvtName,
-				getSignalClosure( this, node ), false
+				getSignalClosure( this, slot ), false
 			);
 		}
 		
@@ -341,7 +287,7 @@ if ( !document.addEventListener )
 		
 		elm[ sigEvtName ] = 0;
 		
-		function getSignalClosure( signal, node ) {
+		function getSignalClosure( signal, slot ) {
 			return function( event )
 			{
 				if (event.propertyName === sigEvtName) {
@@ -350,7 +296,7 @@ if ( !document.addEventListener )
 						arguments.callee, false
 					);
 					if ( signal.dispatching )
-						callListener( signal, node, args );
+						callListener( signal, slot, args );
 				}
 			};
 		}
