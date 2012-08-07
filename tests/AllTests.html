@@ -651,6 +651,42 @@ test( "less unstoppable", function() {
 	);
 } );
 
+test( "set some priorities", function() {
+	
+	var signal = new SignalLite();
+	
+	var results = [];
+	
+	signal.priority(0).add( function() {
+		results.push(0);
+	} );
+	
+	signal.priority(2).add( function() {
+		results.push(2.2);
+	} );
+	
+	signal.priority(1).add( function() {
+		results.push(1.1);
+	} );
+	
+	signal.priority(0).once( function() {
+		results.push(.1);
+	} );
+	
+	signal.priority(2).addToTop( function() {
+		results.push(2.1);
+	} );
+	
+	signal.namespace.add( "test" );
+	signal.test.priority(1.2).add( function() {
+		results.push( 1.2 );
+	} );
+	
+	signal.dispatch();
+	
+	deepEqual( results, [0,.1,1.1,1.2,2.1,2.2], "The listeners should have fired in the correct order." );
+});
+
 })();
 </script>
 </body>

@@ -106,58 +106,17 @@ function SignalLite( target, eachReturn, eachError )
 					_ns = namespace;
 					signal.once( listener, target );
 					_ns = null;
+				},
+				priority: function( priority ) {
+					_ns = namespace;
+					var p = signal.priority( priority );
+					_ns = null;
+					return p;
 				}
 			};
 		},
 		remove: function( namespace ) {
 			delete signal[ namespace ];
-		}
-	};
-	
-	// :NOTE: Untested
-	this.priority = function( priority )
-	{
-		function priorityAdd(  listener, target, compare ) {
-			// if the listener is already linked, remove it to reinsert.
-			if ( this.has( listener ) )
-				this.remove( listener );
-			
-			// find the slot after the current priority
-			var node = this.first
-			while ( node = node.next ) {
-				if ( compare( node.priority, priority ) )
-				{
-					var slot = new SlotLite( listener, target );
-					slot.priority = priority;
-					node.prev.next = slot;
-					node.prev = slot;
-					// :TODO: work out how to mix this into namespaces
-					slot.ns = _ns;
-					return;
-				}
-			}
-			// If we got here, priority puts it at the end of the list.
-			node.next = new SlotLite( listener, target );
-			node.next.prev = node;
-			this.last = node.next;
-		}
-		return {
-			add: function( listener, target )
-			{
-				priorityAdd.call( signal, listener, target,
-					function( p1, p2 ) {
-						return p1 > p2;
-					}
-				);
-			},
-			addToTop: function( listener, target )
-			{
-				priorityAdd.call( signal, listener, target,
-					function( p1, p2 ) {
-						return p1 >= p2;
-					}
-				);
-			}
 		}
 	};
 }
@@ -273,8 +232,6 @@ SignalLite.prototype = {
 		function oneTime() {
 			that.remove( oneTime );
 			listener.apply( this, arguments );
-			listener = undefined;
-			that = undefined;
 		}
 		this.add( oneTime, target );
 	},
@@ -377,6 +334,69 @@ SignalLite.prototype = {
 	},
 	stopDispatch: function() {
 		this.dispatching = false;
+	},
+	priority: function( priority )
+	{
+		function priorityAdd( listener, target, compare )
+		{
+			// if the listener is already linked, remove it to reinsert.
+			if ( signal.has( listener ) )
+				signal.remove( listener );
+			
+			// if there are no listeners, insert at the beginning.
+			if ( signal.first === signal.last ) {
+				signal.add( listener, target );
+				signal.last.priority = priority;
+				return;
+			}
+			
+			var node = signal.first;
+			while ( node = node.next )
+			{
+				if ( compare( node.priority, priority ) )
+				{
+					var slot = new SlotLite( listener, target );
+					slot.priority = priority;
+					slot.next = node;
+					slot.prev = node.prev;
+					node.prev.next = slot;
+					node.prev = slot;
+					slot.ns = pns;
+					return;
+				}
+			}
+			
+			// If we got here, priority puts it at the end of the list.
+			signal.add( listener, target );
+			signal.last.priority = priority;
+		}
+		var signal = this, pns = _ns;
+		return {
+			add: function( listener, target )
+			{
+				priorityAdd( listener, target,
+					function( p1, p2 ) {
+						return p1 > p2;
+					}
+				);
+			},
+			addToTop: function( listener, target )
+			{
+				priorityAdd( listener, target,
+					function( p1, p2 ) {
+						return p1 >= p2;
+					}
+				);
+			},
+			once: function( listener, target )
+			{
+				function oneTime() {
+					signal.remove( oneTime );
+					listener.apply( this, arguments );
+				}
+				this.add( oneTime, target );
+			}
+		};
 	}
 };
 
