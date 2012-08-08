@@ -789,9 +789,18 @@ test( "set some priorities", function() {
 		results.push( 1.2 );
 	} );
 	
+	// These basically override the max and min priorities.
+	// I need to think about this.
+	signal.add( function() {
+		results.push(3);
+	} );
+	signal.addToTop( function() {
+		results.push(-1);
+	} );
+	
 	signal.trigger();
 	
-	deepEqual( results, [0,.1,1.1,1.2,2.1,2.2], "The listeners should have fired in the correct order." );
+	deepEqual( results, [-1,0,.1,1.1,1.2,2.1,2.2,3], "The listeners should have fired in the correct order." );
 });
 
 })();
