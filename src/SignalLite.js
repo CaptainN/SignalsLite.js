@@ -1,9 +1,4 @@
-﻿(function( undefined ) { "use strict";
-
-var sig_index = 0,
-	_ns = null,
-	isFirefox = navigator.userAgent.indexOf( "compatible" ) < 0 &&
-		/Mozilla(.*)rv:(.*)Gecko/.test( navigator.userAgent );
+﻿(function() { "use strict";
 
 /**
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
@@ -14,18 +9,15 @@ function SlotLite( listener, target ) {
 	this.prev = null; // SlotLite
 	this.listener = listener; // Function
 	this.target = target;
-	this.ns = null;
 }
 
 /**
  * A lite version of Robert Penner's AS3 Signals, for JavaScript.
  * @param target The value of this in listeners when dispatching.
  * @param eachReturn A callback to handle the return value of each listener.
- * @param eachError A callback to handle errors in each listener, when they occur.
- * This is especially useful for Firefox which suppresses erros inside listeners.
  * @author Kevin Newman
  */
-function SignalLite( target, eachReturn, eachError )
+function SignalLite( target, eachReturn )
 {
 	/**
 	 * The empty first slot in a linked set.
@@ -50,105 +42,20 @@ function SignalLite( target, eachReturn, eachError )
 	this.eachReturn = eachReturn;
 	
 	/**
-	 * A callback to handle errors in each listener, when they occur.
-	 */
-	this.eachError = eachError;
-	
-	/**
 	 * A simple flag to say if we are dispatching. Used by stopDispatch.
 	 * @private
 	 */
 	this.dispatching = false;
-	
-	var signal = this;
-	
-	this.namespace = {
-		add: function( namespace )
-		{
-			// prevents overwriting of built in props.
-			if ( signal[ namespace ] ) return;
-			
-			signal[ namespace ] = {
-				add: function( listener, target )
-				{
-					_ns = namespace;
-					signal.add( listener, target );
-					_ns = null;
-				},
-				addToTop: function( listener, target )
-				{
-					_ns = namespace;
-					signal.addToTop( listener, target );
-					_ns = null;
-				},
-				remove: function( listener )
-				{
-					if ( !listener ) return;
-					_ns = namespace;
-					signal.remove( listener );
-					_ns = null;
-				},
-				removeAll: function()
-				{
-					if ( signal.first === signal.last ) return;
-					
-					var node = signal.first;
-					
-					while ( node = node.next )
-						if ( node.ns === namespace )
-							cutNode.call( signal, node );
-					
-					if ( signal.first === signal.last )
-						signal.first.next = null;
-				},
-				once: function( listener, target )
-				{
-					_ns = namespace;
-					signal.once( listener, target );
-					_ns = null;
-				},
-				priority: function( priority ) {
-					_ns = namespace;
-					var p = signal.priority( priority );
-					_ns = null;
-					return p;
-				}
-			};
-		},
-		remove: function( namespace ) {
-			delete signal[ namespace ];
-		}
-	};
 }
 
-function cutNode( node )
+var cutNode = SignalLite._cutNode = function( node )
 {
 	node.prev.next = node.next;
 	if ( node.next )
 		node.next.prev = node.prev;
 	if ( this.last === node )
 		this.last = node.prev;
-}
-
-function callListener( signal, node, args )
-{
-	try {
-		var val = node.listener.apply(
-			node.target || signal.target, args
-		);
-		if ( signal.eachReturn )
-			signal.eachReturn( val, args );
-	}
-	catch ( e ) {
-		// Firefox is supporessing this for some reason, so we'll 
-		// manually report the error, until I figure out why.
-		if ( isFirefox && console )
-			console.error( e );
-		if ( signal.eachError )
-			signal.eachError( e );
-		throw e;
-	}
-}
+};
 
 SignalLite.prototype = {
 	/**
@@ -162,7 +69,6 @@ SignalLite.prototype = {
 		this.last.next = new SlotLite( listener, target );
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
-		this.last.ns = _ns;
 	},
 	
 	/**
@@ -183,7 +89,6 @@ SignalLite.prototype = {
 		slot.prev = this.first;
 		this.first.next.prev = slot;
 		this.first.next = slot;
-		slot.ns = _ns;
 	},
 	
 	/**
@@ -247,8 +152,7 @@ SignalLite.prototype = {
 		var node = this.first;
 		
 		while ( node = node.next ) {
-			if ( node.listener === listener &&
-					node.ns === _ns ) {
+			if ( node.listener === listener ) {
 				cutNode.call( this, node );
 				break;
 			}
@@ -294,166 +198,13 @@ SignalLite.prototype = {
 		this.dispatching = false;
 	},
 	
-	/**
-	 * Dispatches an event. 
-	 * SignalLite.dispatch is a safe dispatcher, which means errors in
-	 * listeners will not fail silently, and will not block the next
-	 * listener.
-	 * @link http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/
-	 */
-	dispatch: function()
-	{
-		if ( this.first === this.last ) return;
-		
-		var args = Array.prototype.slice.call(arguments),
-			sigEvtName = "SignalLiteEvent" + (++sig_index),
-			d = document;
-		
-		function getSignalClosure( signal, node ) {
-			return function closure() {
-				d.removeEventListener( sigEvtName, closure, false );
-				if ( signal.dispatching )
-					callListener( signal, node, args );
-			};
-		}
-		
-		// Building this dispatch list essentially copies the dispatch list, so 
-		// add/removes during dispatch won't have any effect. BONUS~!
-		var node = this.first;
-		while ( node = node.next ) {
-			d.addEventListener( sigEvtName,
-				getSignalClosure( this, node ), false
-			);
-		}
-		
-		this.dispatching = true;
-		
-		var se = d.createEvent( "UIEvents" );
-		se.initEvent( sigEvtName, false, false );
-		d.dispatchEvent( se );
-	},
 	stopDispatch: function() {
 		this.dispatching = false;
-	},
-	priority: function( priority )
-	{
-		function priorityAdd( listener, target, compare )
-		{
-			// if the listener is already linked, remove it to reinsert.
-			if ( signal.has( listener ) )
-				signal.remove( listener );
-			
-			// if there are no listeners, insert at the beginning.
-			if ( signal.first === signal.last ) {
-				signal.add( listener, target );
-				signal.last.priority = priority;
-				return;
-			}
-			
-			var node = signal.first;
-			while ( node = node.next )
-			{
-				if ( compare( node.priority, priority ) )
-				{
-					var slot = new SlotLite( listener, target );
-					slot.priority = priority;
-					slot.next = node;
-					slot.prev = node.prev;
-					node.prev.next = slot;
-					node.prev = slot;
-					slot.ns = pns;
-					return;
-				}
-			}
-			
-			// If we got here, priority puts it at the end of the list.
-			signal.add( listener, target );
-			signal.last.priority = priority;
-		}
-		var signal = this, pns = _ns;
-		return {
-			add: function( listener, target )
-			{
-				priorityAdd( listener, target,
-					function( p1, p2 ) {
-						return p1 > p2;
-					}
-				);
-			},
-			addToTop: function( listener, target )
-			{
-				priorityAdd( listener, target,
-					function( p1, p2 ) {
-						return p1 >= p2;
-					}
-				);
-			},
-			once: function( listener, target )
-			{
-				function oneTime() {
-					signal.remove( oneTime );
-					listener.apply( this, arguments );
-				}
-				this.add( oneTime, target );
-			}
-		};
 	}
 };
 
-// IE 8 and lower
-if ( !document.addEventListener )
-{
-	var elm = document.documentElement;
-	
-	SignalLite.prototype.dispatch = function()
-	{
-		if ( this.first === this.last ) return;
-		
-		var args = Array.prototype.slice.call(arguments);
-		var sigEvtName = "SignalLiteEvent" + (++sig_index);
-		
-		elm[ sigEvtName ] = 0;
-		
-		function getSignalClosure( signal, node ) {
-			return function( event )
-			{
-				if (event.propertyName === sigEvtName) {
-					elm.detachEvent( "onpropertychange",
-						 // using named inline function ref didn't work here...
-						arguments.callee, false
-					);
-					if ( signal.dispatching )
-						callListener( signal, node, args );
-				}
-			};
-		}
-		
-		this.dispatching = true;
-		
-		// NOTE: IE dispatches in reverse order, so we need to
-		// attach the events backwards. Actually, this didn't
-		// always work (especially from a local disk). We'll
-		// do the slower individual dispatch method, to keep
-		// things dispatching in the correct order.
-		var node = this.first;
-		while ( node = node.next ) {
-			elm.attachEvent( "onpropertychange",
-				getSignalClosure( this, node ), false
-			);
-			// triggers the property change event
-			elm[ sigEvtName ]++;
-		}
-		
-		try {
-			delete elm[ sigEvtName ];
-		}
-		catch( e ) {
-			elm[ sigEvtName ] = null;
-		}
-	};
-}
-
 // This has to be assigned here, rather than inline because of bugs in IE7/IE8
 window.SignalLite = SignalLite;
+window.SlotLite = SlotLite;
 
 })();
