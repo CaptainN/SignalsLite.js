@@ -357,7 +357,7 @@ test( "less unstoppable - Trigger", function() {
 
 test( "addToTop - Trigger", function() {
 	
-	var signaled = new SignalDispatcher();
+	var signaled = new SignalLite();
 	
 	var dispatched = [];
 	
@@ -367,18 +367,13 @@ test( "addToTop - Trigger", function() {
 	signaled.add( function() {
 		dispatched.push( 4 );
 	} );
-	signaled.namespace.add("module1");
-	signaled.module1.addToTop( function() {
-		dispatched.push( 2 );
-	} );
 	signaled.addToTop( function() {
 		dispatched.push( 1 );
 	} );
 	
 	signaled.trigger();
 	
-	deepEqual( dispatched, [1,2,3,4], "The signaled should have fired in the correct order, fourth signal first." );
-	
+	deepEqual( dispatched, [1,3,4], "The signaled should have fired in the correct order, fourth signal first." );
 } );
 
 test( "return handler - trigger", function() {
@@ -757,6 +752,30 @@ test( "namespaces", function() {
 		"signaled.add should not be overwritten by namespace, should still be a function." );
 } );
 
+test( "addToTop - namespaces", function() {
+	
+	var signaled = new Signal();
+	
+	var dispatched = [];
+	
+	signaled.add( function() {
+		dispatched.push( 3 );
+	} );
+	signaled.add( function() {
+		dispatched.push( 4 );
+	} );
+	signaled.namespace.add("module1");
+	signaled.module1.addToTop( function() {
+		dispatched.push( 2 );
+	} );
+	signaled.addToTop( function() {
+		dispatched.push( 1 );
+	} );
+	
+	signaled.trigger();
+	
+	deepEqual( dispatched, [1,2,3,4], "The signaled should have fired in the correct order, fourth signal first." );
+} );
 
 test( "set some priorities", function() {
 	
@@ -802,6 +821,33 @@ test( "set some priorities", function() {
 	
 	deepEqual( results, [-1,0,.1,1.1,1.2,2.1,2.2,3], "The listeners should have fired in the correct order." );
 });
+
+test( "namespaces alternative syntaxes", 2, function() {
+
+	var signaled = new Signal();
+	var dispatched = [];
+	
+	signaled.ns.add("module2").add( function() {
+		dispatched.push( 5 );
+	} );
+	signaled.module2.add(function() {
+		dispatched.push( 6 );
+	});
+	signaled.trigger();
+	deepEqual( dispatched, [5,6], "The `ns` shortcut should have had the same add method, and chaining should have worked." );
+	
+	dispatched = [];
+	
+	signaled.removeAll();
+	signaled.ns("module3").add( function() {
+		dispatched.push( 6 );
+	} );
+	signaled.ns("module3").add( function() {
+		dispatched.push( 7 );
+	} );
+	signaled.trigger();
+	deepEqual( dispatched, [6,7], "The alternative syntax should have worked twice." );
+} );
 
 })();
 </script>
