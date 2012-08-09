@@ -12,69 +12,71 @@ function Signal()
 	SignalLite.apply( this, arguments );
 	
 	var signal = this;
-	this.namespace = {
-		add: function( namespace )
-		{
-			// prevents overwriting of built in props.
-			if ( signal[ namespace ] ) return;
-			
-			signal[ namespace ] = {
-				add: function( listener, target )
-				{
-					signal.add( listener, target );
-					signal.last.ns = namespace;
-				},
-				addToTop: function( listener, target )
-				{
-					signal.addToTop( listener, target );
-					signal.first.next.ns = namespace;
-				},
-				remove: function( listener )
-				{
-					if ( !listener || signal.first === signal.last ) return;
+	this.ns = this.namespace = function( ns ) {
+		return this[ ns ] || this.ns.add( ns );
+	};
+	this.ns.add = function( namespace )
+	{
+		// prevents overwriting of built in props.
+		if ( signal[ namespace ] ) return;
 		
-					var node = signal.first;
-					
-					while ( node = node.next ) {
-						if ( node.listener === listener &&
-								node.ns === namespace ) {
-							cutNode.call( signal, node );
-							break;
-						}
+		signal[ namespace ] = {
+			add: function( listener, target )
+			{
+				signal.add( listener, target );
+				signal.last.ns = namespace;
+			},
+			addToTop: function( listener, target )
+			{
+				signal.addToTop( listener, target );
+				signal.first.next.ns = namespace;
+			},
+			remove: function( listener )
+			{
+				if ( !listener || signal.first === signal.last ) return;
+	
+				var node = signal.first;
+				
+				while ( node = node.next ) {
+					if ( node.listener === listener &&
+							node.ns === namespace ) {
+						cutNode.call( signal, node );
+						break;
 					}
-					
-					if ( signal.first === signal.last )
-						signal.first.next = null;
-				},
-				removeAll: function()
-				{
-					if ( signal.first === signal.last ) return;
-					
-					var node = signal.first;
-					
-					while ( node = node.next )
-						if ( node.ns === namespace )
-							cutNode.call( signal, node );
-					
-					if ( signal.first === signal.last )
-						signal.first.next = null;
-				},
-				once: function( listener, target )
-				{
-					signal.once( listener, target );
-					signal.last.ns = namespace;
-				},
-				priority: function( priority ) {
-					_ns = namespace;
-					var p = signal.priority( priority );
-					_ns = null;
-					return p;
 				}
-			};
-		},
-		remove: function( namespace ) {
-			delete signal[ namespace ];
-		}
+				
+				if ( signal.first === signal.last )
+					signal.first.next = null;
+			},
+			removeAll: function()
+			{
+				if ( signal.first === signal.last ) return;
+				
+				var node = signal.first;
+				
+				while ( node = node.next )
+					if ( node.ns === namespace )
+						cutNode.call( signal, node );
+				
+				if ( signal.first === signal.last )
+					signal.first.next = null;
+			},
+			once: function( listener, target )
+			{
+				signal.once( listener, target );
+				signal.last.ns = namespace;
+			},
+			priority: function( priority ) {
+				_ns = namespace;
+				var p = signal.priority( priority );
+				_ns = null;
+				return p;
+			}
+		};
+		return signal[ namespace ];
+	};
+	this.ns.remove = function( namespace ) {
+		delete signal[ namespace ];
 	};
 }
 Signal.prototype = new SignalLite();
@@ -146,7 +148,7 @@ Signal.prototype.priority = function( priority )
 			this.add( oneTime, target );
 		}
 	};
-}
+};
 
 window.Signal = Signal;
 
