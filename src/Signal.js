@@ -34,7 +34,7 @@ function Signal()
 			remove: function( listener )
 			{
 				if ( !listener || signal.first === signal.last ) return;
-	
+				
 				var node = signal.first;
 				
 				while ( node = node.next ) {
@@ -78,6 +78,12 @@ function Signal()
 	this.ns.remove = function( namespace ) {
 		delete signal[ namespace ];
 	};
+	
+	// need to override the original add methods to set default priority of 0.
+	var zeroP = signal.priority( 0 );
+	signal.add = zeroP.add;
+	signal.addToTop = zeroP.addToTop;
+	signal.once = zeroP.once;
 }
 Signal.prototype = new SignalLite();
 
@@ -96,7 +102,7 @@ Signal.prototype.priority = function( priority )
 		
 		// if there are no listeners, insert at the beginning.
 		if ( signal.first === signal.last ) {
-			signal.add( listener, target );
+			parent.add.call( signal, listener, target );
 			signal.last.priority = priority;
 			return;
 		}
@@ -118,11 +124,11 @@ Signal.prototype.priority = function( priority )
 		}
 		
 		// If we got here, priority puts it at the end of the list.
-		signal.add( listener, target );
+		parent.add.call( signal, listener, target );
 		signal.last.priority = priority;
 	}
-	var signal = this, pns = _ns;
-	return {
+	var signal = this, pns = _ns, parent = SignalLite.prototype,
+	props = {
 		add: function( listener, target )
 		{
 			priorityAdd( listener, target,
@@ -141,13 +147,13 @@ Signal.prototype.priority = function( priority )
 		},
 		once: function( listener, target )
 		{
-			function oneTime() {
-				signal.remove( oneTime );
-				listener.apply( this, arguments );
-			}
-			this.add( oneTime, target );
+			var add = signal.add;
+			signal.add = props.add;
+			parent.once.call( signal, listener, target );
+			signal.add = add;
 		}
 	};
+	return props;
 };
 
 window.Signal = Signal;

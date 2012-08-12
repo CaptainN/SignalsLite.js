@@ -783,8 +783,12 @@ test( "set some priorities", function() {
 	
 	var results = [];
 	
+	signal.add( function() {
+		results.push( 0.05 );
+	} );
+	
 	signal.priority(0).add( function() {
-		results.push(0);
+		results.push(.1);
 	} );
 	
 	signal.priority(2).add( function() {
@@ -796,11 +800,19 @@ test( "set some priorities", function() {
 	} );
 	
 	signal.priority(0).once( function() {
-		results.push(.1);
+		results.push( .2 );
+	} );
+	
+	signal.add( function() {
+		results.push( .3 );
 	} );
 	
 	signal.priority(2).addToTop( function() {
 		results.push(2.1);
+	} );
+	
+	signal.addToTop( function() {
+		results.push( 0 );
 	} );
 	
 	signal.namespace.add( "test" );
@@ -808,18 +820,9 @@ test( "set some priorities", function() {
 		results.push( 1.2 );
 	} );
 	
-	// These basically override the max and min priorities.
-	// I need to think about this.
-	signal.add( function() {
-		results.push(3);
-	} );
-	signal.addToTop( function() {
-		results.push(-1);
-	} );
-	
 	signal.trigger();
 	
-	deepEqual( results, [-1,0,.1,1.1,1.2,2.1,2.2,3], "The listeners should have fired in the correct order." );
+	deepEqual( results, [0,.05,.1,.2,.3,1.1,1.2,2.1,2.2], "The listeners should have fired in the correct order." );
 });
 
 test( "namespaces alternative syntaxes", 2, function() {
