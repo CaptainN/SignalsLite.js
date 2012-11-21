@@ -1,9 +1,9 @@
 interface SignalLite {
-	constructor( target?: any, eachReturn?: ( any? ) => any );
+	constructor( target?: any, eachReturn?: ( ...args: any[] ) => any );
 	add( listener: ( ...args: any[] ) => any, target?: any ) : void;
-	addToTop( listener: () => any, target?: any ) : void;
-	once( listener: () => any, target?: any ) : void;
-	remove( listener: () => any ) : void;
+	addToTop( listener: ( ...args: any[] ) => any, target?: any ) : void;
+	once( listener: ( ...args: any[] ) => any, target?: any ) : void;
+	remove( listener: ( ...args: any[] ) => any ) : void;
 	removeAll() : void;
 	getLength() : number;
 	trigger( ...args: any[] ) : void;
