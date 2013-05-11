@@ -29,6 +29,7 @@ declare class SignalPriority {
 // :TODO: ns has .add and .remove nodes, figure out how to specify that in TS.
 // :TODO: ns.add adds a property to the signal, figure out how to allow in TS.
 declare class Signal extends SignalLite {
+	constructor( target?: any, eachReturn?: ( ...args: any[] ) => any );
 	//ns: SignalNamespaceMgr;
 	ns( name: string ): SignalNamespace;
 	//namespace: SignalNamespaceMgr;
