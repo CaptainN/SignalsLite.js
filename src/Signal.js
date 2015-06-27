@@ -10,7 +10,7 @@ var _ns = null, cutNode = SignalLite._cutNode;
 function Signal( target, eachReturn )
 {
 	SignalLite.apply( this, arguments );
-	
+
 	var signal = this;
 	this.ns = this.namespace = function( ns ) {
 		return this[ ns ] || this.ns.add( ns );
@@ -19,7 +19,7 @@ function Signal( target, eachReturn )
 	{
 		// prevents overwriting of built in props.
 		if ( signal[ namespace ] ) return;
-		
+
 		signal[ namespace ] = {
 			add: function( listener, target )
 			{
@@ -36,9 +36,9 @@ function Signal( target, eachReturn )
 			remove: function( listener )
 			{
 				if ( !listener || signal.first === signal.last ) return;
-				
+
 				var node = signal.first;
-				
+
 				while ( node = node.next ) {
 					if ( node.listener === listener &&
 							node.ns === namespace ) {
@@ -46,7 +46,7 @@ function Signal( target, eachReturn )
 						break;
 					}
 				}
-				
+
 				if ( signal.first === signal.last )
 					signal.first.next = null;
 
@@ -55,13 +55,13 @@ function Signal( target, eachReturn )
 			removeAll: function()
 			{
 				if ( signal.first === signal.last ) return;
-				
+
 				var node = signal.first;
-				
+
 				while ( node = node.next )
 					if ( node.ns === namespace )
 						cutNode.call( signal, node );
-				
+
 				if ( signal.first === signal.last )
 					signal.first.next = null;
 
@@ -86,7 +86,7 @@ function Signal( target, eachReturn )
 	this.ns.remove = function( namespace ) {
 		delete signal[ namespace ];
 	};
-	
+
 	// need to override the original add methods to set default priority of 0.
 	var zeroP = signal.priority( 0 );
 	signal.add = zeroP.add;
@@ -107,14 +107,14 @@ Signal.prototype.priority = function( priority )
 		// if the listener is already linked, remove it to reinsert.
 		if ( signal.has( listener ) )
 			signal.remove( listener );
-		
+
 		// if there are no listeners, insert at the beginning.
 		if ( signal.first === signal.last ) {
 			parent.add.call( signal, listener, target );
 			signal.last.priority = priority;
 			return;
 		}
-		
+
 		var node = signal.first;
 		while ( node = node.next )
 		{
@@ -130,7 +130,7 @@ Signal.prototype.priority = function( priority )
 				return;
 			}
 		}
-		
+
 		// If we got here, priority puts it at the end of the list.
 		parent.add.call( signal, listener, target );
 		signal.last.priority = priority;
@@ -169,4 +169,4 @@ Signal.prototype.priority = function( priority )
 
 return Signal;
 
-})();
+})();

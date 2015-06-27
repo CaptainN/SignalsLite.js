@@ -24,23 +24,23 @@ function SignalLite( target, eachReturn )
 	 * @private
 	 */
 	this.first = new SlotLite;
-	
+
 	/**
 	 * The last Slot is initially a reference to the same slot as the first.
 	 * @private
 	 */
 	this.last = this.first;
-	
+
 	/**
 	 * The value of this in listeners when dispatching.
 	 */
 	this.target = target;
-	
+
 	/**
 	 * A callback to handle the return value of each listener.
 	 */
 	this.eachReturn = eachReturn;
-	
+
 	/**
 	 * A simple flag to say if we are dispatching. Used by stopDispatch.
 	 * @private
@@ -71,7 +71,7 @@ SignalLite.prototype = {
 		this.last = this.last.next;
 		return this.target;
 	},
-	
+
 	/**
 	 * Add a listener for this Signal in the first position.
 	 * Pushes the first item to the second position. If the listener
@@ -92,7 +92,7 @@ SignalLite.prototype = {
 		this.first.next = slot;
 		return this.target;
 	},
-	
+
 	/**
 	 * Checks if the Signal contains a specific listener.
 	 * @param listener The listener to check for.
@@ -101,7 +101,7 @@ SignalLite.prototype = {
 	has: function( listener )
 	{
 		if ( this.first === this.last ) return false;
-		
+
 		var node = this.first;
 		do {
 			if ( node.next && node.next.listener === listener ) {
@@ -109,25 +109,25 @@ SignalLite.prototype = {
 			}
 		}
 		while( node = node.next );
-		
+
 		return false;
 	},
-	
+
 	/**
 	 * Gets the number of listeners.
 	 */
 	getLength: function()
 	{
 		var count = 0;
-		
+
 		var node = this.first;
 		while ( node = node.next ) {
 			++count;
 		}
-		
+
 		return count;
 	},
-	
+
 	/**
 	 * My mother told a listener once. Once.
 	 * @param listener The function to be called when the signal fires.
@@ -142,7 +142,7 @@ SignalLite.prototype = {
 		}
 		return this.add( oneTime, target );
 	},
-	
+
 	/**
 	 * Remove a listener for this Signal.
 	 * @param listener The function to be removed from the signal.
@@ -152,20 +152,20 @@ SignalLite.prototype = {
 		if (this.first === this.last ) return;
 
 		var node = this.first;
-		
+
 		while ( node = node.next ) {
 			if ( node.listener === listener ) {
 				cutNode.call( this, node );
 				break;
 			}
 		}
-		
+
 		if ( this.first === this.last )
 			this.first.next = null;
 
 		return this.target;
 	},
-	
+
 	/**
 	 * Remove all listeners from this Signal.
 	 */
@@ -177,7 +177,7 @@ SignalLite.prototype = {
 
 		return this.target;
 	},
-	
+
 	/**
 	 * jQuery style trigger - fast, manual error handling recommended.
 	 * SignalLite.trigger does not use safe dispatching, but
@@ -186,12 +186,12 @@ SignalLite.prototype = {
 	trigger: function()
 	{
 		if ( this.first === this.last ) return;
-		
+
 		this.dispatching = true;
-		
+
 		var args = Array.prototype.slice.call(arguments),
 			node = this.first;
-		
+
 		while ( (node = node.next) && this.dispatching )
 		{
 			var val = node.listener.apply(
@@ -200,12 +200,12 @@ SignalLite.prototype = {
 			if ( this.eachReturn )
 				this.eachReturn( val, args );
 		}
-		
+
 		this.dispatching = false;
 
 		return this.target;
 	},
-	
+
 	stopDispatch: function() {
 		this.dispatching = false;
 		return this.target;
