@@ -11,7 +11,10 @@
     "dispatcher",
     "signal",
     "priority",
-    "namespace"
+    "namespace",
+    "signalslite",
+    "signallite",
+    "signaldispatcher"
   ],
   "license": "MIT"
 }
