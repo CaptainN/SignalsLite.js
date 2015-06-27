@@ -1,4 +1,4 @@
-﻿(function() { "use strict";
+﻿(function (exports) { "use strict";
 
 /**
  * Holds the listener to be called by the Signal (and provides properties for a simple linked list).
@@ -69,6 +69,7 @@ SignalLite.prototype = {
 		this.last.next = new SlotLite( listener, target );
 		this.last.next.prev = this.last;
 		this.last = this.last.next;
+		return this.target;
 	},
 	
 	/**
@@ -89,6 +90,7 @@ SignalLite.prototype = {
 		slot.prev = this.first;
 		this.first.next.prev = slot;
 		this.first.next = slot;
+		return this.target;
 	},
 	
 	/**
@@ -138,7 +140,7 @@ SignalLite.prototype = {
 			that.remove( oneTime );
 			listener.apply( this, arguments );
 		}
-		this.add( oneTime, target );
+		return this.add( oneTime, target );
 	},
 	
 	/**
@@ -147,8 +149,8 @@ SignalLite.prototype = {
 	 */
 	remove: function( listener )
 	{
-		if ( this.first === this.last ) return;
-		
+		if (this.first === this.last ) return;
+
 		var node = this.first;
 		
 		while ( node = node.next ) {
@@ -160,6 +162,8 @@ SignalLite.prototype = {
 		
 		if ( this.first === this.last )
 			this.first.next = null;
+
+		return this.target;
 	},
 	
 	/**
@@ -170,6 +174,8 @@ SignalLite.prototype = {
 		this.first.next = null;
 		this.first.prev = null;
 		this.last = this.first;
+
+		return this.target;
 	},
 	
 	/**
@@ -196,15 +202,18 @@ SignalLite.prototype = {
 		}
 		
 		this.dispatching = false;
+
+		return this.target;
 	},
 	
 	stopDispatch: function() {
 		this.dispatching = false;
+		return this.target;
 	}
 };
 
 // This has to be assigned here, rather than inline because of bugs in IE7/IE8
-window.SignalLite = SignalLite;
-window.SlotLite = SlotLite;
+exports.SignalLite = SignalLite;
+exports.SlotLite = SlotLite;
 
-})();
+})(this.exports || this);

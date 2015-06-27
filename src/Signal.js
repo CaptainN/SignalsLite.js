@@ -1,4 +1,4 @@
-(function() { "use strict";
+Signal = (function() { "use strict";
 
 var _ns = null, cutNode = SignalLite._cutNode;
 
@@ -7,7 +7,7 @@ var _ns = null, cutNode = SignalLite._cutNode;
  * @param target The value of this in listeners when dispatching.
  * @param eachReturn A callback to handle the return value of each listener.
  */
-function Signal()
+function Signal( target, eachReturn )
 {
 	SignalLite.apply( this, arguments );
 	
@@ -25,11 +25,13 @@ function Signal()
 			{
 				signal.add( listener, target );
 				signal.last.ns = namespace;
+				return signal.target;
 			},
 			addToTop: function( listener, target )
 			{
 				signal.addToTop( listener, target );
 				signal.first.next.ns = namespace;
+				return signal.target;
 			},
 			remove: function( listener )
 			{
@@ -47,6 +49,8 @@ function Signal()
 				
 				if ( signal.first === signal.last )
 					signal.first.next = null;
+
+				return signal.target;
 			},
 			removeAll: function()
 			{
@@ -60,11 +64,15 @@ function Signal()
 				
 				if ( signal.first === signal.last )
 					signal.first.next = null;
+
+				return signal.target;
 			},
 			once: function( listener, target )
 			{
 				signal.once( listener, target );
 				signal.last.ns = namespace;
+
+				return signal.target;
 			},
 			priority: function( priority ) {
 				_ns = namespace;
@@ -136,6 +144,7 @@ Signal.prototype.priority = function( priority )
 					return p1 > p2;
 				}
 			);
+			return signal.target;
 		},
 		addToTop: function( listener, target )
 		{
@@ -144,6 +153,7 @@ Signal.prototype.priority = function( priority )
 					return p1 >= p2;
 				}
 			);
+			return signal.target;
 		},
 		once: function( listener, target )
 		{
@@ -151,11 +161,12 @@ Signal.prototype.priority = function( priority )
 			signal.add = props.add;
 			parent.once.call( signal, listener, target );
 			signal.add = add;
+			return signal.target;
 		}
 	};
 	return props;
 };
 
-window.Signal = Signal;
+return Signal;
 
-})();
+})();
