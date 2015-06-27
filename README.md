@@ -25,6 +25,15 @@ The lightweight signals paradigm doesn't require an event object like the DOM mo
 
 SignalDispatcher provides a safe dispatching model. If there is a JavaScript error thrown in a listener, it will not block the remaining signals. Care was taken to make sure errors are not supressed. Note: There is an error in Firefox where DOM events do suppress errors - there's a workaround in SignalsLite.js to report the error to the JavaScript console, but these errors will not trigger window.onerror. To compensate, there is an eachError function you can set to catch these errors.
 
+Installation
+------------
+
+Each of the minified files contain whatever dependencies (SignalsLite.js has no dependencies, Signals.js contains SignalsLite, and SignalDispatcher contains both the others). You should link only the one lib file you need.
+
+Use Bower to install:
+
+`bower install signals-lite`
+
 API Quick Reference
 -------------------
 
