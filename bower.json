@@ -5,7 +5,7 @@
     "Kevin Newman <Kevin@unFocus.com>"
   ],
   "description": "A signal patterned event dispatcher.",
-  "main": "js/SignalLite.js",
+  "main": "src/SignalLite.js",
   "keywords": [
     "event",
     "dispatcher",
