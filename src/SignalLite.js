@@ -216,4 +216,4 @@ SignalLite.prototype = {
 exports.SignalLite = SignalLite;
 exports.SlotLite = SlotLite;
 
-})(this.exports || this);
+})(typeof exports !== 'undefined' ? exports : this);
