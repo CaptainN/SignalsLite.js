@@ -1,11 +1,11 @@
 {
   "name": "SignalsLite.js",
-  "version": "0.9.1",
   "homepage": "https://github.com/CaptainN/SignalsLite.js",
   "authors": [
     "Kevin Newman <Kevin@unFocus.com>"
   ],
   "description": "A signal patterned event dispatcher.",
+  "main": "js/SignalLite.js",
   "keywords": [
     "event",
     "dispatcher",
