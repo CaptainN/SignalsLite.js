@@ -1,0 +1,27 @@
+{
+  "name": "signals-lite",
+  "version": "0.9.1",
+  "description": "A propery based event (signal) dispatcher.",
+  "main": "src/SignalLite.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CaptainN/SignalsLite.js.git"
+  },
+  "keywords": [
+    "signal",
+    "dispatcher",
+    "events"
+  ],
+  "author": "Kevin Newman",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CaptainN/SignalsLite.js/issues"
+  },
+  "homepage": "https://github.com/CaptainN/SignalsLite.js#readme"
+}
