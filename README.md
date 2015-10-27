@@ -16,23 +16,25 @@ myInterface.clicked.add( function( obj ) {
 } );
 
 // dispatching with arbitrary object
-myInterface.clicked.trigger( obj );
+myInterface.clicked.broadcast( obj );
 ```
 
 In JavaScript, the property based model (obj.clicked, vs. strings based model addEventListener( "clicked" ) ) has additional benefit over string based models, because when you type something wrong (obj.laoded.clicked) JavaScript will throw up an error, rather than silently adding an event listener to an event that will never fire.
 
-The lightweight signals paradigm doesn't require an event object like the DOM model. No standard object is passed to the listener, unless you want it to. Instead, all arguments passed to the dispatch method will be passed on to the listeners. This is nice because you can actually pass whatever you want to the listeners, without having to create a custom Event object, or code up any boilerplate. Just pass the values or references your listeners will need, if any.
+The lightweight signals paradigm doesn't require an event object like the DOM model. No standard object is passed to the listener, unless you want it to. Instead, all arguments passed to the broadcast method will be passed on to the listeners. This is nice because you can actually pass whatever you want to the listeners, without having to create a custom Event object, or code up any boilerplate. Just pass the values or references your listeners will need, if any.
 
 SignalDispatcher provides a safe dispatching model. If there is a JavaScript error thrown in a listener, it will not block the remaining signals. Care was taken to make sure errors are not supressed. Note: There is an error in Firefox where DOM events do suppress errors - there's a workaround in SignalsLite.js to report the error to the JavaScript console, but these errors will not trigger window.onerror. To compensate, there is an eachError function you can set to catch these errors.
 
 Installation
 ------------
 
-Each of the minified files contain whatever dependencies (SignalsLite.js has no dependencies, Signals.js contains SignalsLite, and SignalDispatcher contains both the others). You should link only the one lib file you need.
-
-Use Bower to install:
+Use Bower to install (Currently only SignalsLite):
 
 `bower install signals-lite`
+
+or npm (Currently only SignalsLite):
+
+`npm install signals-lite`
 
 API Quick Reference
 -------------------
@@ -41,35 +43,36 @@ These are the public methods and properties provided by a SignalLite instance:
 
 ```Javascript
 SignalLite( target, eachReturn ) = {
-	add				function ( listener, target )
-	addToTop		function ( listener, target )
-	once			function ( listener, target )
-	remove			function ( listener )
-	removeAll		function ()
-	getLength		function () // returns the number of listeners
-	trigger			function ()
-	stopDispatch	function ()
-	eachReturn		property function
+	add           ( listener, target )
+	addToTop      ( listener, target )
+	once          ( listener, target )
+	remove        ( listener )
+	removeAll     ()
+	getLength     () // returns the number of listeners
+	broadcast     ()
+	stopBroadcast ()
+	eachReturn    property function
 }
 // all of SignalLite, plus
 Signal( target, eachReturn ) = {
-	namespace.add		function( "yourNamespace" )
-	namespace.remove	function( "yourNamespace" )
+	namespace.add     ( "{yourNamespace}" )
+	namespace.remove  ( "{yourNamespace}" )
 	{yourNamespace} = {
-		add				function ( listener, target )
-		addToTop		function ( listener, target )
-		once			function ( listener, target )
-		remove			function ( listener )
-		removeAll		function ()
+		add       ( listener, target )
+		addToTop  ( listener, target )
+		once      ( listener, target )
+		remove    ( listener )
+		removeAll ()
 	}
-	priority( n ).add		function( listener, target )
-	priority( n ).addToTop	function( listener, target )
-	priority( n ).once		function( listener, target )
+	priority( n ).add      ( listener, target )
+	priority( n ).addToTop ( listener, target )
+	priority( n ).once     ( listener, target )
 }
 // all of Signal and SignalLite with safe dispatch method
 SignalDispatcher( target, eachReturn, eachError ) = {
-	dispatch		function ( ... rest )
-	eachError		property function
+	dispatch     ( ... rest )
+	stopDispatch ()
+	eachError    property function
 }
 ```
 
@@ -78,11 +81,13 @@ There are 3 ways to add a listener to a Signal, add, once, and addToTop.
  - once adds the listener to the end of the list, and will only fire one time, then remove itself.
  - addToTop adds the listener to the beginning of the list.
 
- All add methods can take a second argument which will set the `this` variable in the listener. This is useful if you are using a property of another object as a listener, and would like the `this` variable to resolve correctly.
+All add methods can take a second argument which will set the `this` variable in the listener. This is useful if you are using a property of another object as a listener, and would like the `this` variable to resolve correctly.
+
+All add and remove methods return the target specified in the constructor, to facilitate chainability.
 
 Namespaces
 ----------
- 
+
 Namespace support is modeled after jQuery event namespacing. This is great because it allows you to remove listeners even when you don't have access to a reference of the listener function, as in cases where an anonymous function was added, or the listener was added in another scope or closure. In SignalsLite.js, namespaces are property based, just like signals themselves. To create a namespace, register a namespace using the namespace property methods:
 
 ```Javascript
