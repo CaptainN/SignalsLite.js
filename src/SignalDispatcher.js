@@ -1,4 +1,4 @@
-(function() { "use strict";
+(function (exports) { "use strict";
 
 var sig_index = 0,
 	d = document || {},
@@ -139,5 +139,6 @@ else if ( d.attachEvent )
 }
 
 window.SignalDispatcher = SignalDispatcher;
+exports.SignalDispatcher = SignalDispatcher;
 
-})();
+})(typeof exports !== 'undefined' ? exports : this);

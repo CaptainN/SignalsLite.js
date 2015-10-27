@@ -1,4 +1,4 @@
-Signal = (function() { "use strict";
+(function (exports) { "use strict";
 
 var _ns = null, cutNode = SignalLite._cutNode;
 
@@ -168,6 +168,6 @@ Signal.prototype.priority = function( priority )
 	return props;
 };
 
-return Signal;
+exports.Signal = Signal;
 
-})();
+})(typeof exports !== 'undefined' ? exports : this);
