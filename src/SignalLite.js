@@ -13,7 +13,7 @@ function SlotLite( listener, target ) {
 
 /**
  * A lite version of Robert Penner's AS3 Signals, for JavaScript.
- * @param target The value of this in listeners when dispatching.
+ * @param target The value of this in listeners when broadcasting.
  * @param eachReturn A callback to handle the return value of each listener.
  * @author Kevin Newman
  */
@@ -32,7 +32,7 @@ function SignalLite( target, eachReturn )
 	this.last = this.first;
 
 	/**
-	 * The value of this in listeners when dispatching.
+	 * The value of this in listeners when broadcasting.
 	 */
 	this.target = target;
 
@@ -42,10 +42,10 @@ function SignalLite( target, eachReturn )
 	this.eachReturn = eachReturn;
 
 	/**
-	 * A simple flag to say if we are dispatching. Used by stopDispatch.
+	 * A simple flag to say if we are broadcasting. Used by stopDispatch.
 	 * @private
 	 */
-	this.dispatching = false;
+	this.broadcasting = false;
 }
 
 var cutNode = SignalLite._cutNode = function( node )
@@ -61,7 +61,7 @@ SignalLite.prototype = {
 	/**
 	 * Add a listener for this Signal.
 	 * @param listener The function to be called when the signal fires.
-	 * @param target The value of this in listeners when dispatching only this listener.
+	 * @param target The value of this in listeners when broadcasting only this listener.
 	 */
 	add: function( listener, target )
 	{
@@ -77,7 +77,7 @@ SignalLite.prototype = {
 	 * Pushes the first item to the second position. If the listener
 	 * is already registered, it'll move it to the top.
 	 * @param listener The function to be called when the signal fires.
-	 * @param target The value of this in listeners when dispatching only this listener.
+	 * @param target The value of this in listeners when broadcasting only this listener.
 	 */
 	addToTop: function( listener, target )
 	{
@@ -131,7 +131,7 @@ SignalLite.prototype = {
 	/**
 	 * My mother told a listener once. Once.
 	 * @param listener The function to be called when the signal fires.
-	 * @param target The value of this in listeners when dispatching only this listener.
+	 * @param target The value of this in listeners when broadcasting only this listener.
 	 */
 	once: function( listener, target )
 	{
@@ -179,35 +179,32 @@ SignalLite.prototype = {
 	},
 
 	/**
-	 * jQuery style trigger - fast, manual error handling recommended.
-	 * SignalLite.trigger does not use safe dispatching, but
-	 * is lightening fast compared with SignalLite.dispatch. Use with caution.
+	 * Broadcast the signal. Allocates no memory during broadcast, and is lightening fast.
 	 */
-	trigger: function()
+	broadcast: function()
 	{
 		if ( this.first === this.last ) return;
 
-		this.dispatching = true;
+		this.broadcasting = true;
 
-		var args = Array.prototype.slice.call(arguments),
-			node = this.first;
+		var node = this.first;
 
-		while ( (node = node.next) && this.dispatching )
+		while ( (node = node.next) && this.broadcasting )
 		{
 			var val = node.listener.apply(
-				node.target || this.target, args
+				node.target || this.target, arguments
 			);
 			if ( this.eachReturn )
-				this.eachReturn( val, args );
+				this.eachReturn( val, arguments );
 		}
 
-		this.dispatching = false;
+		this.broadcasting = false;
 
 		return this.target;
 	},
 
-	stopDispatch: function() {
-		this.dispatching = false;
+	stopBroadcast: function() {
+		this.broadcasting = false;
 		return this.target;
 	}
 };
