@@ -6,8 +6,8 @@ declare class SignalLite {
 	remove( listener: ( ...args: any[] ) => any ) : void;
 	removeAll() : void;
 	getLength() : number;
-	trigger( ...args: any[] ) : void;
-	stopDispatch() : void;
+	broadcast( ...args: any[] ) : void;
+	stopBroadcast() : void;
 	eachReturn: ( ...args: any[] ) => any;
 }
 declare class SignalNamespace {
@@ -39,5 +39,6 @@ declare class Signal extends SignalLite {
 declare class SignalDispatcher extends Signal {
 	constructor( target?: any, eachReturn?: ( any? ) => any, eachError?: ( any? ) => any );
 	dispatch( ...args: any[] ) : void;
+	stopDispatch() : void;
 	eachError: ( ...args: any[] ) => any;
 }
