@@ -13,9 +13,9 @@ function Signal( target, eachReturn )
 
 	var signal = this;
 	this.ns = this.namespace = function( ns ) {
-		return this[ ns ] || this.ns.add( ns );
+		return this[ ns ] || this.ns.register( ns );
 	};
-	this.ns.add = function( namespace )
+	this.ns.register = function( namespace )
 	{
 		// prevents overwriting of built in props.
 		if ( signal[ namespace ] ) return;
@@ -83,7 +83,8 @@ function Signal( target, eachReturn )
 		};
 		return signal[ namespace ];
 	};
-	this.ns.remove = function( namespace ) {
+	this.ns.unregister = function( namespace ) {
+		// :TODO: find a nice way to protect built in props
 		delete signal[ namespace ];
 	};
 
