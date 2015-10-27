@@ -119,12 +119,12 @@ test("add, remove, has listener", function()
 		"signaled should have 0 listeners");
 });
 
-test("normal triggering", function()
+test("normal broadcasting", function()
 {
 	var signaled = new SignalLite();
 
-	// empty dispatch should not trigger an error.
-	signaled.trigger();
+	// empty dispatch should not broadcast an error.
+	signaled.broadcast();
 
 	var dispatchedCount = 0;
 	var listener = function() {
@@ -135,16 +135,16 @@ test("normal triggering", function()
 
 	equal( dispatchedCount, 0, "dispatchedCount should be 0 before dispatch" );
 
-	signaled.trigger();
+	signaled.broadcast();
 	equal( dispatchedCount, 1, "dispatchedCount should be 1 after one dispatch" );
 
-	signaled.trigger();
+	signaled.broadcast();
 	equal( dispatchedCount, 2, "dispatchedCount should be 2 after two dispatches" );
 
 	signaled.remove( listener );
 });
 
-test("once triggering", function()
+test("once broadcasting", function()
 {
 	var signaled = new SignalLite();
 
@@ -157,15 +157,15 @@ test("once triggering", function()
 	strictEqual( signaled.getLength(), 1, "signaled should has 1 listener" );
 	strictEqual( dispatchedCount, 0, "dispatchedCount should be 0 before dispatch" );
 
-	signaled.trigger();
+	signaled.broadcast();
 	strictEqual( dispatchedCount, 1, "dispatchedCount should be 1 after one dispatch" );
 	strictEqual( signaled.getLength(), 0, "signaled should has 0 listeners" );
 
-	signaled.trigger();
+	signaled.broadcast();
 	strictEqual( dispatchedCount, 1, "dispatchedCount should be 1 after two dispatches" );
 });
 
-test("triggering with arguments", function() {
+test("broadcasting with arguments", function() {
 
 	var signaled = new SignalLite();
 
@@ -176,11 +176,11 @@ test("triggering with arguments", function() {
 	}
 
 	signaled.add( listener );
-	signaled.trigger( "", 0, [0,1,"3"] );
+	signaled.broadcast( "", 0, [0,1,"3"] );
 
 } );
 
-test("triggering with thisArg", function() {
+test("broadcasting with thisArg", function() {
 
 	var target = {};
 	var target2 = {};
@@ -190,24 +190,24 @@ test("triggering with thisArg", function() {
 		equal( target, this, "this should equal target" );
 		signaled.remove( listener );
 	} );
-	signaled.trigger();
+	signaled.broadcast();
 
 	signaled.add( function listener() {
 		notEqual( target, this, "this should not equal target");
 		equal( target2, this, "this should equal target2");
 		signaled.remove( listener );
 	}, target2 );
-	signaled.trigger();
+	signaled.broadcast();
 
 	signaled.once( function listener() {
 		notEqual( target, this, "this should not equal target");
 		equal( target2, this, "this should equal target2");
 	}, target2 );
-	signaled.trigger();
+	signaled.broadcast();
 } );
 
 
-test("errors during triggering", function() {
+test("errors during broadcasting", function() {
 
 	var signaled = new SignalLite();
 
@@ -233,7 +233,7 @@ test("errors during triggering", function() {
 
 	raises(
 		function() {
-			signaled.trigger();
+			signaled.broadcast();
 		}, "An error in a listener will hault the dispatching."
 	);
 
@@ -247,7 +247,7 @@ test("errors during triggering", function() {
 
 
 
-test( "trigger in order", function() {
+test( "broadcast in order", function() {
 
 	expect( 1 );
 
@@ -265,14 +265,14 @@ test( "trigger in order", function() {
 		dispatched.push( 3 );
 	} );
 
-	signaled.trigger();
+	signaled.broadcast();
 
 	deepEqual( dispatched, [1,2,3], "The signaled should have fired in order" );
 
 } );
 
 
-test( "trigger within a trigger", function() {
+test( "broadcast within a broadcast", function() {
 
 	expect( 9 );
 
@@ -288,7 +288,7 @@ test( "trigger within a trigger", function() {
 	} );
 	signaled1.add( function() {
 		equal( count1, 1, "count1 should be 1 before signaled2 is dispatched" );
-		signaled2.trigger();
+		signaled2.broadcast();
 		equal( count1, 1, "count1 should still be 1 after signaled2 is dispatched" );
 	} );
 	signaled1.add( function() {
@@ -313,11 +313,11 @@ test( "trigger within a trigger", function() {
 		equal( count2, 3, "count2 should be 3 - third iterator2" );
 	} );
 
-	signaled1.trigger();
+	signaled1.broadcast();
 
 	equal( count1, count2, "Each signaled should have dispatched to the same number of listeners" );
 } );
-test( "less unstoppable - Trigger", function() {
+test( "less unstoppable - Broadcast", function() {
 
 	var signal = new SignalLite();
 
@@ -338,14 +338,14 @@ test( "less unstoppable - Trigger", function() {
 	} );
 
 	signal.addToTop( function( evt ) {
-		// this should!
+		// this should (because addToTop)!
 		dispatch_count++;
 	} );
 
 	// Partially simulate classic event object.
-	signal.trigger( {
+	signal.broadcast( {
 		stopImmediatePropagation: function() {
-			signal.stopDispatch();
+			signal.stopBroadcast();
 		}
 	} );
 
@@ -371,12 +371,12 @@ test( "addToTop - Trigger", function() {
 		dispatched.push( 1 );
 	} );
 
-	signaled.trigger();
+	signaled.broadcast();
 
 	deepEqual( dispatched, [1,3,4], "The signaled should have fired in the correct order, fourth signal first." );
 } );
 
-test( "return handler - trigger", function() {
+test( "return handler - broadcast", function() {
 
 	var signaled = new SignalLite();
 
@@ -404,7 +404,7 @@ test( "return handler - trigger", function() {
 	} );
 
 	// ... back in core code - dispatching the filter
-	wpFilter.value_filter.trigger( value_tofilter );
+	wpFilter.value_filter.broadcast( value_tofilter );
 
 	equal( value_tofilter, "THE value of things", '"some" should be "THE" and "stuff" should be "things"' );
 
@@ -416,7 +416,7 @@ test("safe dispatching", function()
 {
 	var signaled = new SignalDispatcher();
 
-	// empty dispatch should not trigger an error.
+	// empty dispatch should not broadcast an error.
 	signaled.dispatch();
 
 	var dispatchedCount = 0;
@@ -645,7 +645,7 @@ test( "addToTop - Dispatcher", function() {
 	signaled.add( function() {
 		dispatched.push( 4 );
 	} );
-	signaled.namespace.add("module1");
+	signaled.namespace.register("module1");
 	signaled.module1.addToTop( function() {
 		dispatched.push( 2 );
 	} );
@@ -701,7 +701,7 @@ test( "namespaces", function() {
 
 	var count = 0;
 
-	signaled.namespace.add( "namespace1" );
+	signaled.namespace.register( "namespace1" );
 	signaled.namespace1.add( function() {
 		count++;
 	} );
@@ -713,12 +713,12 @@ test( "namespaces", function() {
 	} );
 
 	count = 0;
-	signaled.trigger();
+	signaled.broadcast();
 	equal( count, 3, "unnamespaced dispatch should have hit all 3 listeners" );
 
 	signaled.namespace1.removeAll();
 	count = 0;
-	signaled.trigger();
+	signaled.broadcast();
 	equal( count, 1, "should only be one listener left" );
 
 	signaled.namespace1.once( function() {} );
@@ -727,11 +727,11 @@ test( "namespaces", function() {
 	signaled.namespace1.remove();
 	equal( signaled.getLength(), 3, "Should still be 3 listeners." );
 
-	signaled.namespace.remove( "namespace1" );
+	signaled.namespace.unregister( "namespace1" );
 
 	equal( signaled.namespace1, undefined, "There should be no namespace1." );
 
-	signaled.namespace.add( "namespace2" );
+	signaled.namespace.register( "namespace2" );
 	signaled.namespace2.add( function(){} );
 	signaled.namespace2.add( new Function("") );
 	signaled.namespace2.add( function foo(){} );
@@ -746,7 +746,7 @@ test( "namespaces", function() {
 
 	equal( signaled.getLength(), 0, "Should be 0 listeners." );
 
-	signaled.namespace.add( 'add' );
+	signaled.namespace.register( 'add' );
 
 	ok( typeof signaled.add == "function",
 		"signaled.add should not be overwritten by namespace, should still be a function." );
@@ -764,7 +764,7 @@ test( "addToTop - namespaces", function() {
 	signaled.add( function() {
 		dispatched.push( 4 );
 	} );
-	signaled.namespace.add("module1");
+	signaled.namespace.register("module1");
 	signaled.module1.addToTop( function() {
 		dispatched.push( 2 );
 	} );
@@ -772,7 +772,7 @@ test( "addToTop - namespaces", function() {
 		dispatched.push( 1 );
 	} );
 
-	signaled.trigger();
+	signaled.broadcast();
 
 	deepEqual( dispatched, [1,2,3,4], "The signaled should have fired in the correct order, fourth signal first." );
 } );
@@ -815,12 +815,12 @@ test( "set some priorities", function() {
 		results.push( 0 );
 	} );
 
-	signal.namespace.add( "test" );
+	signal.namespace.register( "test" );
 	signal.test.priority(1.2).add( function() {
 		results.push( 1.2 );
 	} );
 
-	signal.trigger();
+	signal.broadcast();
 
 	deepEqual( results, [0,.05,.1,.2,.3,1.1,1.2,2.1,2.2], "The listeners should have fired in the correct order." );
 });
@@ -830,13 +830,13 @@ test( "namespaces alternative syntaxes", 2, function() {
 	var signaled = new Signal();
 	var dispatched = [];
 
-	signaled.ns.add("module2").add( function() {
+	signaled.ns.register("module2").add( function() {
 		dispatched.push( 5 );
 	} );
 	signaled.module2.add(function() {
 		dispatched.push( 6 );
 	});
-	signaled.trigger();
+	signaled.broadcast();
 	deepEqual( dispatched, [5,6], "The `ns` shortcut should have had the same add method, and chaining should have worked." );
 
 	dispatched = [];
@@ -848,7 +848,7 @@ test( "namespaces alternative syntaxes", 2, function() {
 	signaled.ns("module3").add( function() {
 		dispatched.push( 7 );
 	} );
-	signaled.trigger();
+	signaled.broadcast();
 	deepEqual( dispatched, [6,7], "The alternative syntax should have worked twice." );
 } );
 
