@@ -16,7 +16,7 @@ var sig_index = 0,
 function SignalDispatcher( target, eachReturn, eachError)
 {
 	Signal.call( this, target, eachReturn );
-	
+
 	/**
 	 * A callback to handle errors in each listener, when they occur.
 	 */
@@ -34,7 +34,7 @@ function callListener( signal, node, args )
 			signal.eachReturn( val, args );
 	}
 	catch ( e ) {
-		// Firefox is supporessing this for some reason, so we'll 
+		// Firefox is supporessing this for some reason, so we'll
 		// manually report the error, until I figure out why.
 		if ( isFirefox && console )
 			console.error( e );
@@ -47,7 +47,7 @@ function callListener( signal, node, args )
 if ( d.addEventListener )
 {
 	/**
-	 * Dispatches an event. 
+	 * Dispatches an event.
 	 * SignalDispatcher.dispatch is a safe dispatcher, which means errors in
 	 * listeners will not fail silently, and will not block the next
 	 * listener.
@@ -56,11 +56,11 @@ if ( d.addEventListener )
 	SignalDispatcher.prototype.dispatch = function()
 	{
 		if ( this.first === this.last ) return;
-		
+
 		var args = Array.prototype.slice.call(arguments),
 			sigEvtName = "SignalLiteEvent" + (++sig_index),
 			d = document;
-		
+
 		function getSignalClosure( signal, node ) {
 			return function closure() {
 				d.removeEventListener( sigEvtName, closure, false );
@@ -68,8 +68,8 @@ if ( d.addEventListener )
 					callListener( signal, node, args );
 			};
 		}
-		
-		// Building this dispatch list essentially copies the dispatch list, so 
+
+		// Building this dispatch list essentially copies the dispatch list, so
 		// add/removes during dispatch won't have any effect. BONUS~!
 		var node = this.first;
 		while ( node = node.next ) {
@@ -77,9 +77,9 @@ if ( d.addEventListener )
 				getSignalClosure( this, node ), false
 			);
 		}
-		
+
 		this.dispatching = true;
-		
+
 		var se = d.createEvent( "UIEvents" );
 		se.initEvent( sigEvtName, false, false );
 		d.dispatchEvent( se );
@@ -89,16 +89,16 @@ if ( d.addEventListener )
 else if ( d.attachEvent )
 {
 	var elm = d.documentElement;
-	
+
 	SignalDispatcher.prototype.dispatch = function()
 	{
 		if ( this.first === this.last ) return;
-		
+
 		var args = Array.prototype.slice.call(arguments);
 		var sigEvtName = "SignalLiteEvent" + (++sig_index);
-		
+
 		elm[ sigEvtName ] = 0;
-		
+
 		function getSignalClosure( signal, node ) {
 			return function( event )
 			{
@@ -112,9 +112,9 @@ else if ( d.attachEvent )
 				}
 			};
 		}
-		
+
 		this.dispatching = true;
-		
+
 		// NOTE: IE dispatches in reverse order, so we need to
 		// attach the events backwards. Actually, this didn't
 		// always work (especially from a local disk). We'll
@@ -128,7 +128,7 @@ else if ( d.attachEvent )
 			// triggers the property change event
 			elm[ sigEvtName ]++;
 		}
-		
+
 		try {
 			delete elm[ sigEvtName ];
 		}
@@ -138,7 +138,11 @@ else if ( d.attachEvent )
 	};
 }
 
-window.SignalDispatcher = SignalDispatcher;
+SignalDispatcher.prototype.stopDispatch = function() {
+	this.dispatching = false;
+	return this.target;
+};
+
 exports.SignalDispatcher = SignalDispatcher;
 
 })(typeof exports !== 'undefined' ? exports : this);

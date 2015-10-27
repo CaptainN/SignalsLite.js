@@ -4,7 +4,7 @@ var _ns = null, cutNode = SignalLite._cutNode;
 
 /**
  * A more fully featured Signal. Provides additional functionality with namespaces and priority adds.
- * @param target The value of this in listeners when dispatching.
+ * @param target The value of this in listeners when broadcasting.
  * @param eachReturn A callback to handle the return value of each listener.
  */
 function Signal( target, eachReturn )
