@@ -1,8 +1,8 @@
 {
   "name": "signals-lite",
-  "version": "0.9.2",
+  "version": "1.0.0",
   "description": "A propery based event (signal) dispatcher.",
-  "main": "src/SignalLite.js",
+  "main": "dist/signals-lite.js",
   "directories": {
     "test": "tests"
   },
